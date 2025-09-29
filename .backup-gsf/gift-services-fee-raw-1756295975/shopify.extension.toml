@@ -1,0 +1,15 @@
+name = "Gift Services Fee"
+type = "function"
+api_version = "2024-07"
+
+[build]
+command = "npm run build"
+path = "dist/main.wasm"
+
+[ui]
+handle = "gift-services-fee"
+
+[function]
+input.query_path = "src/input.graphql"
+
+

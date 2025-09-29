@@ -1,0 +1,41 @@
+<script src="{{ 'hide-hidden-addons.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Hide Hidden Add-ons",
+  "target": "body",
+  "javascript": "hide-hidden-addons.js",
+  "settings": [
+    {
+      "type": "text",
+      "id": "product_selector",
+      "label": "Product card selector",
+      "default": "[data-product-card], .card--product, .grid__item, [data-product-id]"
+    },
+    {
+      "type": "text",
+      "id": "tags_attr",
+      "label": "Attribute containing tags (comma-separated)",
+      "default": "data-product-tags"
+    },
+    {
+      "type": "checkbox",
+      "id": "debug",
+      "label": "Enable debug logging",
+      "default": false
+    }
+  ],
+  "enabled_on": {
+    "templates": ["collection", "search"]
+  }
+}
+{% endschema %}
+
+<div
+  data-addons-config
+  data-product-selector="{{ block.settings.product_selector | escape }}"
+  data-tags-attr="{{ block.settings.tags_attr | escape }}"
+  data-debug="{{ block.settings.debug }}"
+></div>
+
+

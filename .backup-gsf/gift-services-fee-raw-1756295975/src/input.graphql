@@ -1,0 +1,11 @@
+query Input {
+  cart {
+    attributes { key value }
+    cost {
+      totalAmount { amount currencyCode }
+    }
+  }
+  shop { currencyCode }
+}
+
+

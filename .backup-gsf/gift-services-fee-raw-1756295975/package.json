@@ -1,0 +1,15 @@
+{
+  "name": "gift-services-fee",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/run.js --bundle --external:user-function --platform=neutral --format=esm --target=es2022 --outfile=dist/main.wasm"
+  },
+  "devDependencies": {
+    "esbuild": "0.20.2",
+    "@shopify/shopify_function": "latest"
+  },
+  "dependencies": {}
+}
+

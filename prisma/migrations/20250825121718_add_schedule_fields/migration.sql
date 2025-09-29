@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Bundle" ADD COLUMN "endAt" DATETIME;
+ALTER TABLE "Bundle" ADD COLUMN "startAt" DATETIME;

@@ -1,0 +1,10 @@
+{
+  "bundle_builder": {
+    "title": "Bundle Builder",
+    "loading": "Loading bundles...",
+    "no_bundles": "No bundles available",
+    "select_bundle": "Select Bundle",
+    "add_to_cart": "Add to Cart",
+    "back_to_bundles": "Back to All Bundles"
+  }
+}

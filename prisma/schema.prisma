@@ -1,0 +1,247 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
+// enough when changing adapters.
+// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.sqlite"
+}
+
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+}
+
+/// Pricing behavior for a bundle
+enum PricingType {
+  SUM
+  FIXED
+  DISCOUNT_PERCENT
+  DISCOUNT_AMOUNT
+}
+
+enum PlanType {
+  FREE
+  PRO
+}
+
+enum BundleStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum BundleType {
+  FIXED
+  MIX_MATCH
+  BUILD_A_BOX
+}
+
+/// Represents a merchant-defined product bundle configuration
+model Bundle {
+  id               String         @id @default(cuid())
+  bundleId         String?        @unique // Public ID for storefront access
+  shop             String
+  title            String
+  description      String? 
+  imageUrl         String?
+  /// Optional Shopify Collection GID for basic build-your-own bundles
+  collectionId     String?
+  pricingType      PricingType    @default(SUM)
+  /// Interpreted based on pricingType (e.g., FIXED price in cents)
+  priceValueCents  Int?
+  /// Optional total item limits for build-your-own bundles
+  minItems         Int?
+  maxItems         Int?
+  /// Optional schedule window for publishing on storefront
+  startAt          DateTime?
+  endAt            DateTime?
+  /// Personalization flags
+  allowMessage     Boolean        @default(false)
+  allowCardUpload  Boolean        @default(false)
+  /// Personalization constraints/fees
+  messageCharLimit Int?
+  personalizationFeeCents Int?
+  /// Wrapping rules
+  wrapRequired     Boolean        @default(false)
+  /// Publishing and type
+  status           BundleStatus   @default(DRAFT)
+  type             BundleType     @default(FIXED)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  products         BundleProduct[]
+  wrappingOptions  WrappingOption[]
+  collections      BundleCollection[]
+  globalWraps      BundleGlobalWrap[]
+  tierPrices       BundleTierPrice[]
+  cards            BundleCard[]
+}
+
+/// Specific product constraints for a bundle (used for fixed bundles or constraints)
+model BundleProduct {
+  id         String  @id @default(cuid())
+  bundleId   String
+  bundle     Bundle  @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  /// Shopify Product GID, e.g. gid://shopify/Product/123
+  productGid String
+  /// Default variant for add-to-cart convenience
+  variantGid String?
+  variantTitle String?
+  /// Product image URL
+  imageUrl   String?
+  /// Product price in cents
+  priceCents Int?
+  min        Int     @default(0)
+  max        Int     @default(0)
+  /// JSON string of variant objects [{id,title,priceCents}]
+  variantsJson String?
+}
+
+/// Predefined card templates (image) that customers can pick if card upload is allowed
+model BundleCard {
+  id        String  @id @default(cuid())
+  bundleId  String
+  bundle    Bundle  @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  name      String
+  imageUrl  String
+  priceCents Int?   // optional price; null or 0 means free
+  shopifyProductId String? // Shopify Product GID
+  shopifyVariantId String? // Shopify Variant GID
+  createdAt DateTime @default(now())
+}
+
+/// Gift wrapping option scoped to a bundle
+model WrappingOption {
+  id          String @id @default(cuid())
+  bundleId    String
+  bundle      Bundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  name        String
+  priceCents  Int    @default(0)
+  imageUrl    String?
+  shopifyProductId String? // Shopify Product GID
+  shopifyVariantId String? // Shopify Variant GID
+}
+
+/// Global wrapping that can be reused across bundles for a shop
+model GlobalWrappingOption {
+  id          String @id @default(cuid())
+  shop        String
+  name        String
+  priceCents  Int    @default(0)
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bundles     BundleGlobalWrap[]
+}
+
+/// Join table assigning global wraps to a bundle
+model BundleGlobalWrap {
+  id          String @id @default(cuid())
+  bundleId    String
+  bundle      Bundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  wrapId      String
+  wrap        GlobalWrappingOption @relation(fields: [wrapId], references: [id], onDelete: Cascade)
+
+  @@unique([bundleId, wrapId])
+}
+
+/// Additional collections that define sources for build-your-own or mix & match
+model BundleCollection {
+  id           String @id @default(cuid())
+  bundleId     String
+  bundle       Bundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  collectionGid String
+}
+
+/// Tiered pricing support (buy more save more) for bundles
+model BundleTierPrice {
+  id              String @id @default(cuid())
+  bundleId        String
+  bundle          Bundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  minQuantity     Int
+  pricingType     PricingType
+  valueCents      Int?   // used for FIXED or DISCOUNT_AMOUNT
+  valuePercent    Int?   // used for DISCOUNT_PERCENT (0-100)
+}
+
+/// Shop-level settings
+model ShopSettings {
+  shop                 String   @id
+  plan                 PlanType @default(FREE)
+  widgetEnabled        Boolean  @default(true)
+  languageJson         String?  // JSON string for i18n overrides
+  widgetPagesJson      String?  // JSON array of paths where widget is enabled
+  // PRO: Hero customization for storefront widget
+  heroEnabled          Boolean? @default(true)
+  heroTitle            String?
+  heroSubtitle         String?
+  heroEmoji            String?
+  heroColorStart       String?
+  heroColorEnd         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+/// Basic analytics: one row per bundle occurrence in an order
+model BundleSale {
+  id         String   @id @default(cuid())
+  shop       String
+  bundleId   String
+  wrappingId String?
+  createdAt  DateTime @default(now())
+}
+
+/// Billing state per shop (Shopify managed billing)
+model ShopSubscription {
+  shop           String   @id
+  subscriptionId String?
+  status         String?
+  planName       String?
+  trialEndsAt    DateTime?
+  rawPayload     Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+/// Global admin config for the app (singleton)
+model AdminConfig {
+  id               String   @id @default("app-admin")
+  appUrl           String?
+  webhooksVersion  String?
+  appHandle        String?
+  whatsappNumber   String?
+  email            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+/// Support messages from users
+model SupportMessage {
+  id        String   @id @default(cuid())
+  shop      String
+  message   String
+  status    String   @default("NEW") // NEW, READ, REPLIED, CLOSED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
