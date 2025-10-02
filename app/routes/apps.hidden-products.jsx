@@ -37,7 +37,7 @@ export const loader = async ({ request }) => {
       const products = data?.products || [];
       for (const p of products) {
         const tags = String(p.tags || "").toLowerCase();
-        if (tags.includes("hidden_addon") || tags.includes("hidden-product") || tags.includes("hidden_product")) {
+        if (tags.includes("hidden_addon") || tags.includes("hidden-product") || tags.includes("hidden_product") || tags.includes("bundle-addon") || tags.includes("bundle_addon")) {
           handles.add(p.handle);
         }
       }
@@ -48,7 +48,7 @@ export const loader = async ({ request }) => {
       if (!pageInfo) break;
     }
 
-    return json({ handles: Array.from(handles) }, { headers: { "Cache-Control": "public, max-age=60" } });
+    return json({ handles: Array.from(handles) }, { headers: { "Cache-Control": "public, max-age=10" } });
   } catch (error) {
     return json({ error: error.message }, { status: 500 });
   }

@@ -1,12 +1,12 @@
 (function(){
   'use strict';
 
-  const TAGS_TO_HIDE = new Set(['hidden_addon','hidden-product']);
+  const TAGS_TO_HIDE = new Set(['hidden_addon','hidden-product','hidden_product','bundle-addon','bundle_addon']);
 
   function getConfig(){
     const el = document.querySelector('[data-addons-config]');
     const cfg = {
-      productSelector: '[data-product-card], .card--product, .grid__item, [data-product-id]',
+      productSelector: '[data-product-card], .card--product, .grid__item, [data-product-id], .product-item, .product-card, .product, .product-block, [data-product], .product-grid-item, .product-list-item, .collection-item, .search-item',
       tagsAttr: 'data-product-tags',
       debug: false
     };
@@ -61,7 +61,15 @@
 
   function getHandleFromNode(node){
     try{
-      const a = node.querySelector('a[href*="/products/"]');
+      // Try multiple methods to find the product handle
+      let a = node.querySelector('a[href*="/products/"]');
+      if(!a) a = node.closest('a[href*="/products/"]');
+      if(!a && node.tagName === 'A' && node.href && node.href.includes('/products/')) a = node;
+      if(!a) {
+        // Check for data attributes
+        const handle = node.getAttribute('data-product-handle') || node.getAttribute('data-handle');
+        if(handle) return handle;
+      }
       if(!a) return null;
       const m = a.getAttribute('href').match(/\/products\/([^\/?#]+)/);
       return m ? m[1] : null;
@@ -79,8 +87,9 @@
       const tagAttr = card.getAttribute(attr);
       if (tagAttr){
         const tags = String(tagAttr).toLowerCase();
-        if (tags.includes('hidden_addon') || tags.includes('hidden-product') || tags.includes('hidden_product')){
+        if (tags.includes('hidden_addon') || tags.includes('hidden-product') || tags.includes('hidden_product') || tags.includes('bundle-addon') || tags.includes('bundle_addon')){
           card.style.setProperty('display','none','important');
+          log('Hiding card via tag attribute for', getHandleFromNode(card) || 'unknown');
           continue;
         }
       }
@@ -99,21 +108,39 @@
     }
   }
 
-  function init(){ hideTagged(document); }
-
+  function init(){ 
+    log('Initializing hidden addon hiding');
+    hideTagged(document); 
+  }
+  
+  // Multiple event listeners for comprehensive coverage
   document.addEventListener('DOMContentLoaded', init);
-  document.addEventListener('shopify:section:load', function(){
-    try { init(); } catch(_){ }
-  });
-
+  document.addEventListener('shopify:section:load', init);
+  document.addEventListener('shopify:section:reorder', init);
+  document.addEventListener('shopify:section:select', init);
+  document.addEventListener('shopify:section:deselect', init);
+  document.addEventListener('shopify:block:select', init);
+  document.addEventListener('shopify:block:deselect', init);
+  
+  // Additional events for AJAX loading
+  window.addEventListener('load', init);
+  window.addEventListener('pageshow', init);
+  
+  // For SPA-like behavior
+  if(window.history && window.history.pushState) {
+    const originalPushState = window.history.pushState;
+    window.history.pushState = function() {
+      originalPushState.apply(window.history, arguments);
+      setTimeout(init, 100);
+    };
+  }
   try{
     let queued = false;
     const obs = new MutationObserver(()=>{
       if (queued) return; queued = true;
-      setTimeout(()=>{ queued = false; hideTagged(document); }, 250);
+      setTimeout(()=>{ queued = false; hideTagged(document); }, 100);
     });
     obs.observe(document.documentElement, { childList:true, subtree:true });
   }catch(_){ }
-
   // No globals exposed to avoid inline calls
 })();
