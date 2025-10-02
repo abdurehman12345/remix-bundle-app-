@@ -76,41 +76,99 @@
     }catch(_){ return null; }
   }
 
-  async function hideTagged(root){
-    const knownHidden = await getHiddenHandles();
+  // Phase 1: INSTANT hiding based on immediate detection
+  function hideTaggedImmediate(root){
     const cfg = getConfig();
     const selector = cfg.productSelector;
     const attr = cfg.tagsAttr;
     const cards = Array.from((root||document).querySelectorAll(selector));
+    let hiddenCount = 0;
+    
     for (const card of cards){
-      // Fast path: attribute contains tags
-      const tagAttr = card.getAttribute(attr);
+      let shouldHide = false;
+      
+      // Method 1: Check tag attributes (instant)
+      const tagAttr = card.getAttribute(attr) || card.getAttribute('data-tags') || card.getAttribute('data-product-tags');
       if (tagAttr){
         const tags = String(tagAttr).toLowerCase();
         if (tags.includes('hidden_addon') || tags.includes('hidden-product') || tags.includes('hidden_product') || tags.includes('bundle-addon') || tags.includes('bundle_addon')){
-          card.style.setProperty('display','none','important');
-          log('Hiding card via tag attribute for', getHandleFromNode(card) || 'unknown');
-          continue;
+          shouldHide = true;
         }
       }
-      // Fallback: resolve handle and fetch tags
-      const handle = getHandleFromNode(card);
-      if (!handle) continue;
-      if (knownHidden && knownHidden.has(handle)){
-        card.style.setProperty('display','none','important');
-        continue;
+      
+      // Method 2: Check URL patterns (instant)
+      if (!shouldHide) {
+        const handle = getHandleFromNode(card);
+        if (handle && (handle.includes('hidden-') || handle.includes('bundle-addon') || handle.includes('addon-'))) {
+          shouldHide = true;
+        }
       }
-      const tags = await fetchTagsForHandle(handle);
-      if (tags.some(t => TAGS_TO_HIDE.has(t))){
-        log('Hiding card for', handle);
-        card.style.setProperty('display','none','important');
+      
+      // Method 3: Check data attributes (instant)
+      if (!shouldHide) {
+        const handle = card.getAttribute('data-product-handle') || card.getAttribute('data-handle');
+        if (handle && (handle.includes('hidden-') || handle.includes('bundle-addon') || handle.includes('addon-'))) {
+          shouldHide = true;
+        }
       }
+      
+      if (shouldHide) {
+        card.style.setProperty('display','none','important');
+        card.setAttribute('data-addon-hidden', 'immediate');
+        hiddenCount++;
+        log('Immediately hiding card for', getHandleFromNode(card) || 'unknown');
+      }
+    }
+    
+    log(`Phase 1: Immediately hidden ${hiddenCount} products`);
+    
+    // Phase 2: Background verification for remaining products
+    setTimeout(() => hideTaggedBackground(root), 0);
+  }
+  
+  // Phase 2: Background API verification (non-blocking)
+  async function hideTaggedBackground(root){
+    try {
+      const knownHidden = await getHiddenHandles();
+      const cfg = getConfig();
+      const selector = cfg.productSelector;
+      const cards = Array.from((root||document).querySelectorAll(selector + ':not([data-addon-hidden])'));
+      let additionalHidden = 0;
+      
+      for (const card of cards){
+        const handle = getHandleFromNode(card);
+        if (!handle) continue;
+        
+        // Check server-side hidden list
+        if (knownHidden && knownHidden.has(handle)){
+          card.style.setProperty('display','none','important');
+          card.setAttribute('data-addon-hidden', 'api');
+          additionalHidden++;
+          log('Background hiding via API:', handle);
+          continue;
+        }
+        
+        // Individual product fetch (lowest priority)
+        const tags = await fetchTagsForHandle(handle);
+        if (tags.some(t => TAGS_TO_HIDE.has(t))){
+          card.style.setProperty('display','none','important');
+          card.setAttribute('data-addon-hidden', 'fetch');
+          additionalHidden++;
+          log('Background hiding via fetch:', handle);
+        }
+      }
+      
+      if (additionalHidden > 0) {
+        log(`Phase 2: Background hidden ${additionalHidden} additional products`);
+      }
+    } catch (error) {
+      log('Background hiding error:', error);
     }
   }
 
   function init(){ 
-    log('Initializing hidden addon hiding');
-    hideTagged(document); 
+    log('Initializing IMMEDIATE hidden addon hiding');
+    hideTaggedImmediate(document); 
   }
   
   // Multiple event listeners for comprehensive coverage
@@ -138,7 +196,7 @@
     let queued = false;
     const obs = new MutationObserver(()=>{
       if (queued) return; queued = true;
-      setTimeout(()=>{ queued = false; hideTagged(document); }, 100);
+      setTimeout(()=>{ queued = false; hideTaggedImmediate(document); }, 50);
     });
     obs.observe(document.documentElement, { childList:true, subtree:true });
   }catch(_){ }
