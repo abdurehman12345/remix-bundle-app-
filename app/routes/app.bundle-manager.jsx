@@ -195,7 +195,7 @@ export default function BundleManager() {
                                 <Badge tone="info">{bundle.type}</Badge>
                                 <Badge tone={bundle.status === 'ACTIVE' ? 'success' : 'attention'}>{bundle.status}</Badge>
                                 <Badge tone="info">{productCount} products</Badge>
-                                <Badge tone="info">{wrapCount} wraps</Badge>
+                                {wrapCount ? <Badge tone="info">{wrapCount} wraps</Badge> : null}
                                 <Badge tone="info">{cardCount} cards</Badge>
                               </InlineStack>
                             </BlockStack>

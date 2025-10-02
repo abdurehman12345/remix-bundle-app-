@@ -155,6 +155,17 @@ export const action = async ({ request }) => {
     return json({ error: "Title is required" }, { status: 400 });
   }
 
+  // Process selected products from form data
+  const selectedProductIds = [];
+  let productIndex = 0;
+  while (formData.get(`selectedProducts[${productIndex}][id]`)) {
+    const productId = String(formData.get(`selectedProducts[${productIndex}][id]`));
+    if (productId) {
+      selectedProductIds.push(productId);
+    }
+    productIndex++;
+  }
+
   const created = await prisma.bundle.create({
     data: {
       shop: session.shop,
@@ -269,6 +280,69 @@ export const action = async ({ request }) => {
     console.error('Auto-backfill wrapper error', e);
   }
 
+  // Add selected individual products to the bundle
+  if (selectedProductIds.length > 0) {
+    try {
+      // Fetch product details from Shopify
+      const productDetailsPromises = selectedProductIds.map(async (productId) => {
+        try {
+          const resp = await admin.graphql(`#graphql
+            query GetProduct($id: ID!) {
+              product(id: $id) {
+                id
+                title
+                featuredMedia { preview { image { url } } }
+                variants(first: 1) {
+                  nodes {
+                    id
+                    title
+                    price
+                    image { url }
+                  }
+                }
+              }
+            }
+          `, { variables: { id: productId } });
+          
+          const data = await resp.json();
+          const product = data?.data?.product;
+          
+          if (product && product.variants?.nodes?.length > 0) {
+            const variant = product.variants.nodes[0];
+            return {
+              productGid: product.id,
+              variantGid: variant.id,
+              variantTitle: variant.title,
+              imageUrl: variant.image?.url || product.featuredMedia?.preview?.image?.url,
+              priceCents: variant.price ? Math.round(parseFloat(variant.price) * 100) : 0,
+              min: 1,
+              max: 5
+            };
+          }
+        } catch (error) {
+          console.error(`Failed to fetch product ${productId}:`, error);
+        }
+        return null;
+      });
+
+      const productDetails = (await Promise.all(productDetailsPromises)).filter(Boolean);
+
+      if (productDetails.length > 0) {
+        // Free plan enforcement: limit to 6 products total
+        const finalProducts = plan === 'FREE' ? productDetails.slice(0, 6) : productDetails;
+        
+        await prisma.bundleProduct.createMany({
+          data: finalProducts.map(product => ({
+            bundleId: created.id,
+            ...product
+          }))
+        });
+      }
+    } catch (error) {
+      console.error("Failed to add selected products:", error);
+    }
+  }
+
   throw redirect("/app/bundles");
 };
 
@@ -288,11 +362,6 @@ export default function BundlesIndex() {
   const [status, setStatus] = useState("DRAFT");
   const [type, setType] = useState("FIXED");
   
-
-
-
-
-
   // Collection selection state
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
@@ -302,6 +371,45 @@ export default function BundlesIndex() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [availableProducts, setAvailableProducts] = useState([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [productSearchQuery, setProductSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Load all products for selection
+  const loadAllProducts = async () => {
+    setIsLoadingProducts(true);
+    try {
+      const res = await fetch(`/api/products?limit=50`);
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableProducts(data.products || []);
+      }
+    } catch (error) {
+      console.error("Failed to load products:", error);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
+  // Search products
+  const searchProducts = async (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    
+    setIsSearching(true);
+    try {
+      const res = await fetch(`/api/products?q=${encodeURIComponent(query)}&limit=20`);
+      if (res.ok) {
+        const data = await res.json();
+        setSearchResults(data.products || []);
+      }
+    } catch (error) {
+      console.error("Failed to search products:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   // Load products for selected collection
   const loadCollectionProducts = async (collectionId) => {
@@ -330,11 +438,32 @@ export default function BundlesIndex() {
   // Handle product selection
   const handleProductSelect = (product, isSelected) => {
     if (isSelected) {
-      setSelectedProducts(prev => [...prev, { ...product, min: 1, max: 5 }]);
+      setSelectedProducts(prev => {
+        if (!prev.find(p => p.id === product.id)) {
+          return [...prev, product];
+        }
+        return prev;
+      });
     } else {
       setSelectedProducts(prev => prev.filter(p => p.id !== product.id));
     }
   };
+
+  // Handle search input change with debouncing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchProducts(productSearchQuery);
+    }, 300);
+    
+    return () => clearTimeout(timeoutId);
+  }, [productSearchQuery]);
+
+  // Load all products when product modal opens
+  useEffect(() => {
+    if (showProductModal && availableProducts.length === 0) {
+      loadAllProducts();
+    }
+  }, [showProductModal]);
 
   return (
     <Page>
@@ -377,38 +506,117 @@ export default function BundlesIndex() {
                     {imageUrl && <img src={imageUrl} alt="Preview" style={{width: '100px', height: '100px', objectFit: 'cover'}} />}
                   </InlineStack>
                   
-                  {/* Collection Selection */}
+                  {/* Collection and Product Selection */}
                   <div style={{ padding: '16px', backgroundColor: '#f0f9ff', borderRadius: '8px', border: '1px solid #0ea5e9' }}>
                     <Text variant="bodyMd" as="h3" style={{ marginBottom: '16px', fontWeight: '600', color: '#0c4a6e' }}>
-                      Select Collection (Optional)
+                      Select Products for Bundle
                     </Text>
-                    <InlineStack gap="300" align="end">
-                      <Select
-                        label="Choose Collection"
-                        options={collections.map(c => ({label: c.title, value: c.id}))}
-                        value={collectionId}
-                        onChange={setCollectionId}
-                        placeholder="Select a collection"
-                      />
-                      {/* Ensure the selected collection is submitted */}
-                      <input type="hidden" name="collectionId" value={collectionId} />
-                      <Button 
-                        onClick={() => setShowCollectionModal(true)}
-                        variant="secondary"
-                      >
-                        Browse Collections
-                      </Button>
-                    </InlineStack>
-                    {collectionId && (
-                      <div style={{ marginTop: '12px' }}>
-                        <Text variant="bodySm" tone="subdued">
-                          Products from this collection will be automatically added to your bundle.
+                    
+                    {/* Collection Selection */}
+                    <BlockStack gap="300">
+                      <InlineStack gap="300" align="end">
+                        <Select
+                          label="Choose Collection (Optional)"
+                          options={collections.map(c => ({label: c.title, value: c.id}))}
+                          value={collectionId}
+                          onChange={setCollectionId}
+                          placeholder="Select a collection"
+                        />
+                        {/* Ensure the selected collection is submitted */}
+                        <input type="hidden" name="collectionId" value={collectionId} />
+                        <Button 
+                          onClick={() => setShowCollectionModal(true)}
+                          variant="secondary"
+                        >
+                          Browse Collections
+                        </Button>
+                      </InlineStack>
+                      
+                      {/* Product Selection */}
+                      <InlineStack gap="300" align="start">
+                        <div style={{ flex: 1 }}>
+                          <Text variant="bodyMd" fontWeight="medium">Or Select Individual Products:</Text>
+                          <Text variant="bodySm" tone="subdued">
+                            Choose specific products from your store to include in this bundle.
+                          </Text>
+                        </div>
+                        <Button 
+                          onClick={() => setShowProductModal(true)}
+                          variant="primary"
+                          tone="success"
+                        >
+                          Select Products
+                        </Button>
+                      </InlineStack>
+                      
+                      {/* Selected Products Summary */}
+                      {selectedProducts.length > 0 && (
+                        <div style={{ marginTop: '12px', padding: '12px', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                          <Text variant="bodySm" fontWeight="medium" tone="success">
+                            {selectedProducts.length} product{selectedProducts.length !== 1 ? 's' : ''} selected:
+                          </Text>
+                          <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                            {selectedProducts.map((product, index) => (
+                              <div key={product.id} style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '6px', 
+                                padding: '4px 8px', 
+                                backgroundColor: 'rgba(16, 185, 129, 0.15)', 
+                                borderRadius: '4px', 
+                                fontSize: '12px' 
+                              }}>
+                                {product.imageUrl && (
+                                  <img 
+                                    src={product.imageUrl} 
+                                    alt={product.title}
+                                    style={{ width: '16px', height: '16px', borderRadius: '2px', objectFit: 'cover' }}
+                                  />
+                                )}
+                                <span>{product.title}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleProductSelect(product, false)}
+                                  style={{ 
+                                    background: 'none', 
+                                    border: 'none', 
+                                    cursor: 'pointer', 
+                                    color: '#059669',
+                                    fontWeight: 'bold',
+                                    padding: '0 2px'
+                                  }}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Hidden inputs for selected products */}
+                          {selectedProducts.map((product, index) => (
+                            <input 
+                              key={product.id}
+                              type="hidden" 
+                              name={`selectedProducts[${index}][id]`} 
+                              value={product.id} 
+                            />
+                          ))}
+                        </div>
+                      )}
+                      
+                      {collectionId && (
+                        <div style={{ marginTop: '12px' }}>
+                          <Text variant="bodySm" tone="subdued">
+                            Products from the selected collection will be automatically added to your bundle.
+                          </Text>
+                        </div>
+                      )}
+                      
+                      {plan === 'FREE' && (
+                        <Text tone="subdued" variant="bodySm">
+                          Free plan tip: keep product count ≤ 6 per bundle. Upgrade for unlimited.
                         </Text>
-                      </div>
-                    )}
-                    {plan === 'FREE' && (
-                      <Text tone="subdued" variant="bodySm">Free plan tip: keep product count ≤ 6 per bundle. Upgrade for unlimited.</Text>
-                    )}
+                      )}
+                    </BlockStack>
                   </div>
 
                   <InlineStack gap="300">
@@ -449,11 +657,7 @@ export default function BundlesIndex() {
                     <BlockStack gap="300">
                       <Checkbox label="Require gift wrap" name="wrapRequired" checked={false} disabled={plan === 'FREE'} onChange={() => {}} />
                       <Checkbox label="Allow gift card add-on" name="allowCardUpload" checked={false} disabled={plan === 'FREE'} onChange={() => {}} />
-                      <InlineStack gap="300">
-                        <TextField label="Personalization message character limit" name="messageCharLimit" type="number" min={0} value={''} onChange={() => {}} disabled={plan === 'FREE'} />
-                        <TextField label="Personalization fee ($)" name="personalizationFee" type="number" min={0} value={''} onChange={() => {}} disabled={plan === 'FREE'} />
-                      </InlineStack>
-                      <Text tone="subdued" variant="bodySm">Pro unlocks tiered pricing, gift wrap & gift card add-ons, and personalized messages with fees.</Text>
+                      <Text tone="subdued" variant="bodySm">Pro unlocks tiered pricing and gift wrap & gift card add-ons.</Text>
                     </BlockStack>
                   </div>
 
@@ -535,13 +739,13 @@ export default function BundlesIndex() {
                               </div>
                             </InlineStack>
                             <Text as="span" tone="subdued" variant="bodySm">
-                              {productCount} products • {wrapCount} wraps • Sales: {sold}
+                              {productCount} products{wrapCount ? ` • ${wrapCount} wraps` : ''} • Sales: {sold}
                             </Text>
                           </BlockStack>
                         </InlineStack>
                         <InlineStack gap="300">
                           <Badge tone="info">{productCount} products</Badge>
-                          <Badge tone="info">{wrapCount} wraps</Badge>
+                          {wrapCount ? <Badge tone="info">{wrapCount} wraps</Badge> : null}
                           <Form method="post">
                             <input type="hidden" name="intent" value="duplicate" />
                             <input type="hidden" name="id" value={item.id} />
@@ -635,6 +839,166 @@ export default function BundlesIndex() {
                 </div>
               ))}
             </div>
+          </BlockStack>
+        </Modal.Section>
+      </Modal>
+
+      {/* Product Selection Modal */}
+      <Modal
+        open={showProductModal}
+        onClose={() => setShowProductModal(false)}
+        title="Select Products"
+        primaryAction={{
+          content: `Add ${selectedProducts.length} Product${selectedProducts.length !== 1 ? 's' : ''}`,
+          onAction: () => {
+            setShowProductModal(false);
+          },
+          disabled: selectedProducts.length === 0
+        }}
+        secondaryActions={[
+          {
+            content: 'Cancel',
+            onAction: () => setShowProductModal(false)
+          }
+        ]}
+        large
+      >
+        <Modal.Section>
+          <BlockStack gap="400">
+            <Text>Choose products from your store to include in this bundle:</Text>
+            
+            {/* Search Input */}
+            <TextField
+              label="Search products"
+              value={productSearchQuery}
+              onChange={setProductSearchQuery}
+              placeholder="Type to search products..."
+              clearButton
+              onClearButtonClick={() => setProductSearchQuery("")}
+              autoComplete="off"
+            />
+            
+            {/* Loading State */}
+            {(isLoadingProducts || isSearching) && (
+              <div style={{ textAlign: 'center', padding: '20px' }}>
+                <Text tone="subdued">Loading products...</Text>
+              </div>
+            )}
+            
+            {/* Products Grid */}
+            {!isLoadingProducts && !isSearching && (
+              <div style={{ 
+                maxHeight: '500px', 
+                overflowY: 'auto',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: '16px',
+                padding: '8px'
+              }}>
+                {(productSearchQuery.trim() ? searchResults : availableProducts).map((product) => {
+                  const isSelected = selectedProducts.some(p => p.id === product.id);
+                  return (
+                    <div
+                      key={product.id}
+                      onClick={() => handleProductSelect(product, !isSelected)}
+                      style={{
+                        padding: '12px',
+                        border: `2px solid ${isSelected ? '#10b981' : '#e5e7eb'}`,
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        backgroundColor: isSelected ? '#f0fdf4' : '#ffffff',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px'
+                      }}
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        onChange={() => {}}
+                      />
+                      
+                      {product.imageUrl ? (
+                        <Thumbnail
+                          source={product.imageUrl}
+                          alt={product.title}
+                          size="small"
+                        />
+                      ) : (
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          backgroundColor: '#f3f4f6',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#9ca3af',
+                          fontSize: '12px'
+                        }}>
+                          No Image
+                        </div>
+                      )}
+                      
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Text as="span" variant="bodyMd" fontWeight="medium">
+                          {product.title}
+                        </Text>
+                        {product.variant && (
+                          <div style={{ marginTop: '4px' }}>
+                            <Text as="span" tone="subdued" variant="bodySm">
+                              ${product.variant.price}
+                            </Text>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {isSelected && (
+                        <div style={{
+                          width: '20px',
+                          height: '20px',
+                          backgroundColor: '#10b981',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}>
+                          ✓
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            
+            {/* No Results */}
+            {!isLoadingProducts && !isSearching && (
+              productSearchQuery.trim() ? searchResults.length === 0 : availableProducts.length === 0
+            ) && (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <Text tone="subdued">
+                  {productSearchQuery.trim() ? 'No products found matching your search.' : 'No products available.'}
+                </Text>
+              </div>
+            )}
+            
+            {/* Selected Products Count */}
+            {selectedProducts.length > 0 && (
+              <div style={{
+                padding: '12px',
+                backgroundColor: '#f0fdf4',
+                borderRadius: '6px',
+                border: '1px solid #bbf7d0'
+              }}>
+                <Text variant="bodySm" fontWeight="medium" tone="success">
+                  {selectedProducts.length} product{selectedProducts.length !== 1 ? 's' : ''} selected
+                </Text>
+              </div>
+            )}
           </BlockStack>
         </Modal.Section>
       </Modal>

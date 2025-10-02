@@ -1,33 +1,14 @@
 import { json } from "@remix-run/node";
 import prisma from "../db.server";
 import { authenticate } from "../shopify.server";
+import { handleCorsPreflightRequest, jsonWithCors } from "../utils/cors.server.js";
+import { normalizeBundleData, filterBundleByPlan, calculateBundlePrice } from "../utils/bundle.server.js";
+import { normalizeImageUrl } from "../utils/image.server.js";
 
 export const loader = async ({ request, params }) => {
   // Handle CORS preflight requests
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': 'https://store-revive.myshopify.com',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Credentials': 'true',
-        'Access-Control-Max-Age': '86400',
-      },
-    });
-  }
-  // Handle CORS preflight requests
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': 'https://store-revive.myshopify.com',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Max-Age': '86400',
-      },
-    });
-  }
+  const corsResponse = handleCorsPreflightRequest(request);
+  if (corsResponse) return corsResponse;
 
   try {
     // Validate app proxy if available; skip gracefully in dev
@@ -181,17 +162,7 @@ export const loader = async ({ request, params }) => {
 
     let products = bundle.products || [];
 
-    // Helpers: normalize local filenames to /uploads/ paths
-    const normalizeImageUrl = (u) => {
-      if (!u) return null;
-      const s = String(u).trim();
-      if (/^https?:\/\//i.test(s)) return s;
-      // If a bare filename or '/uploads/<file>', serve via our app proxy under /apps/bundles/uploads/<file>
-      const file = s.replace(/^\/?uploads\//, "");
-      const out = `/apps/bundles/uploads/${file}`;
-      try { console.log('[bundle-detail] normalizeImageUrl', { in: u, out }); } catch(_){}
-      return out;
-    };
+    // Use imported image normalization utility
 
 
     // If there are no saved products but a collectionId exists, try to surface products (respect plan limits)
@@ -591,14 +562,14 @@ export const action = async ({ request, params }) => {
     async function getOnlineStorePublicationId(){
       if (onlineStorePublicationId) return onlineStorePublicationId;
       try {
-        const q = `#graphql\n          query GetPublications {\n            publications(first: 10) { nodes { id name } }\n          }`;
+        const q = `#graphql\n          query GetPublications {\n            publications(first: 10) { nodes { id catalog { title } } }\n          }`;
         const pubRes = await fetch(`https://${shop}/admin/api/2025-01/graphql.json`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
           body: JSON.stringify({ query: q })
         });
         const pj = await pubRes.json();
-        const online = pj?.data?.publications?.nodes?.find(n => n?.name === 'Online Store');
+        const online = pj?.data?.publications?.nodes?.find(n => n?.catalog?.title === 'Online Store');
         onlineStorePublicationId = online?.id || null;
       } catch(_){ onlineStorePublicationId = null; }
       return onlineStorePublicationId;

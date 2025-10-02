@@ -26,7 +26,7 @@ export const loader = async ({ request, params }) => {
         { bundleId: { contains: params.bundleId } }
       ] 
     },
-    include: { products: true, wrappingOptions: true },
+    include: { products: true, wrappingOptions: true, cards: true },
   });
   
   if (!bundle) {
@@ -102,13 +102,10 @@ export const action = async ({ request, params }) => {
     const selectedVariantMap = body.selectedVariantMap || {}; // {productId: variantId}
     const selectedWrapId = body.selectedWrapId || null;
     const selectedCardId = body.selectedCardId || null;
-    const messageValue = body.messageValue || '';
 
-    // Calculate total price
-    let total = 0;
-    let subtotal = 0;
+    // Calculate product subtotal (discountable) and add-ons (non-discountable)
+    let productSubtotal = 0; // only bundle items
     const selectedProducts = bundle.products.filter(p => selectedProductIds.includes(p.id));
-    
     for (const product of selectedProducts) {
       const variantId = selectedVariantMap[product.id];
       if (variantId && product.variantsJson) {
@@ -116,38 +113,31 @@ export const action = async ({ request, params }) => {
           const variants = JSON.parse(product.variantsJson);
           const variant = variants.find(v => v.id === variantId);
           if (variant) {
-            subtotal += variant.priceCents || (product.priceCents || 0);
-            if (variant.priceCents) {
-              total += variant.priceCents;
-            }
+            productSubtotal += variant.priceCents || (product.priceCents || 0);
           } else {
-            subtotal += product.priceCents || 0;
-            total += product.priceCents || 0;
+            productSubtotal += product.priceCents || 0;
           }
         } catch (_) {
-          subtotal += product.priceCents || 0;
-          total += product.priceCents || 0;
+          productSubtotal += product.priceCents || 0;
         }
       } else {
-        subtotal += product.priceCents || 0;
-        total += product.priceCents || 0;
+        productSubtotal += product.priceCents || 0;
       }
     }
 
-    // Add wrap price if selected
+    let addonsSubtotal = 0; // wraps, cards, personalization
     if (selectedWrapId) {
       const wrap = bundle.wrappingOptions.find(w => w.id === selectedWrapId);
-      if (wrap) { subtotal += wrap.priceCents || 0; total += wrap.priceCents || 0; }
+      if (wrap) { addonsSubtotal += wrap.priceCents || 0; }
     }
-
-    // Add card price if selected
     if (selectedCardId) {
       const card = bundle.cards.find(c => c.id === selectedCardId);
-      if (card) { subtotal += card.priceCents || 0; total += card.priceCents || 0; }
+      if (card) { addonsSubtotal += card.priceCents || 0; }
     }
+    // personalization removed
 
-    // Apply bundle pricing rules to compute final total from subtotal
-    // (total already reflects per-variant selection; override below if bundle pricing dictates)
+    // Derive product total based on tier/bundle pricing
+    let productTotal = productSubtotal;
     const itemsCount = selectedProducts.length;
     if (bundle.tierPrices && bundle.tierPrices.length > 0) {
       const applicable = bundle.tierPrices
@@ -155,24 +145,30 @@ export const action = async ({ request, params }) => {
         .sort((a,b) => b.minQuantity - a.minQuantity)[0];
       if (applicable) {
         if (applicable.pricingType === 'FIXED' && applicable.valueCents != null) {
-          total = applicable.valueCents;
+          productTotal = applicable.valueCents;
         } else if (applicable.pricingType === 'DISCOUNT_PERCENT' && applicable.valuePercent != null) {
-          total = Math.max(0, subtotal - Math.floor(subtotal * (applicable.valuePercent/100)));
+          productTotal = Math.max(0, productSubtotal - Math.floor(productSubtotal * (applicable.valuePercent/100)));
         } else if (applicable.pricingType === 'DISCOUNT_AMOUNT' && applicable.valueCents != null) {
-          total = Math.max(0, subtotal - applicable.valueCents);
+          productTotal = Math.max(0, productSubtotal - applicable.valueCents);
+        } else {
+          productTotal = productSubtotal;
         }
       }
     } else {
       if (bundle.pricingType === 'FIXED' && bundle.priceValueCents != null) {
-        total = bundle.priceValueCents;
+        productTotal = bundle.priceValueCents;
       } else if (bundle.pricingType === 'DISCOUNT_PERCENT' && bundle.priceValueCents != null) {
-        total = Math.max(0, subtotal - Math.floor(subtotal * (bundle.priceValueCents/100)));
+        productTotal = Math.max(0, productSubtotal - Math.floor(productSubtotal * (bundle.priceValueCents/100)));
       } else if (bundle.pricingType === 'DISCOUNT_AMOUNT' && bundle.priceValueCents != null) {
-        total = Math.max(0, subtotal - bundle.priceValueCents);
+        productTotal = Math.max(0, productSubtotal - bundle.priceValueCents);
+      } else {
+        // SUM or default
+        productTotal = productSubtotal;
       }
     }
 
-    const discountCents = Math.max(0, subtotal - total);
+    const total = productTotal + addonsSubtotal;
+    const discountCents = Math.max(0, productSubtotal - productTotal);
 
     // If prefer=discount, return a one-time discount code to apply in cart
     const prefer = new URL(request.url).searchParams.get('prefer');
@@ -206,7 +202,7 @@ export const action = async ({ request, params }) => {
     if (prefer === 'discount') {
       let discountCode = null;
       let priceRuleId = null;
-      const debug = { subtotalCents: subtotal, totalCents: total, discountCents, itemsCount: selectedProducts.length, entitledVariantIds: [] };
+      const debug = { subtotalCents: productSubtotal, totalCents: total, discountCents, itemsCount: selectedProducts.length, entitledVariantIds: [] };
 
       // Rotate: remove previous bundle codes quickly before issuing a new one
       await cleanupBundlePriceRules(10);
@@ -273,7 +269,7 @@ export const action = async ({ request, params }) => {
           }
         } catch(err) { console.error('❌ Discount creation error:', err); }
       } else {
-        console.warn('⚠️ Computed discountCents is 0. subtotal vs total:', subtotal, total);
+        console.warn('⚠️ Computed discountCents is 0. subtotal vs total:', productSubtotal, total);
       }
 
       return json({
@@ -290,14 +286,14 @@ export const action = async ({ request, params }) => {
     async function getOnlineStorePublicationId(){
       if (onlineStorePublicationId) return onlineStorePublicationId;
       try {
-        const q = `#graphql\n          query GetPublications {\n            publications(first: 10) { nodes { id name } }\n          }`;
+        const q = `#graphql\n          query GetPublications {\n            publications(first: 10) { nodes { id catalog { title } } }\n          }`;
         const pubRes = await fetch(`https://${shop}/admin/api/2025-01/graphql.json`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
           body: JSON.stringify({ query: q })
         });
         const pj = await pubRes.json();
-        const online = pj?.data?.publications?.nodes?.find(n => n?.name === 'Online Store');
+        const online = pj?.data?.publications?.nodes?.find(n => n?.catalog?.title === 'Online Store');
         onlineStorePublicationId = online?.id || null;
       } catch(_){ onlineStorePublicationId = null; }
       return onlineStorePublicationId;

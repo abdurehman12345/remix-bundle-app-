@@ -63,9 +63,7 @@ export const loader = async ({ request, params }) => {
       priceValueCents: bundle.priceValueCents,
       minItems: bundle.minItems,
       maxItems: bundle.maxItems,
-      allowMessage: bundle.allowMessage,
-      messageCharLimit: bundle.messageCharLimit,
-      personalizationFeeCents: bundle.personalizationFeeCents,
+      
       wrapRequired: bundle.wrapRequired,
       type: bundle.type,
       products: bundle.products.map(p => {
@@ -108,7 +106,6 @@ export const loader = async ({ request, params }) => {
 export const headers = () => ({
   "Cache-Control": "public, max-age=60",
 });
-
 export const action = async () => json({}, { status: 405 });
 
 

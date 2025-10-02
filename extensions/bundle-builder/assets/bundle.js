@@ -46,445 +46,30 @@
     }
   };
 
-  // Enhanced 3D Ring Carousel
-  class Enhanced3DRingCarousel {
-    constructor(container, bundles) {
-      this.container = container;
-      this.bundles = bundles;
-      this.currentIndex = 0;
-      this.isAnimating = false;
-      this.autoplayTimer = null;
-      this.autoplayDelay = 5000;
-      this.touchStartX = 0;
-      this.touchStartY = 0;
-      this.isSwiping = false;
-      this.observer = null;
-      this.rotationAngle = 0;
-      this.angleStep = (2 * Math.PI) / this.bundles.length;
-      
-      this.init();
-    }
-    
-    init() {
-      this.render();
-      this.setupEventListeners();
-      this.updateNavigation();
-      this.setupIntersectionObserver();
-      this.startAutoplay();
-      this.addProgressIndicator();
-      this.initializeRingPositions();
-    }
-    
-    render() {
-      const sliderHTML = `
-        <div class="bb__promo-card">
-          <div class="bb__promo-icon">🎁</div>
-          <h3 class="bb__promo-title">Premium 3D Ring Collection</h3>
-          <p class="bb__promo-text">Experience our revolutionary 3D ring carousel showcasing handpicked bundles with immersive depth and stunning visual effects!</p>
-          <div class="bb__promo-stats">
-            <div class="bb__stat">
-              <span class="bb__stat-number">${this.bundles.length}</span>
-              <span class="bb__stat-label">3D Ring Collections</span>
+  // Enhanced loading screen with 3D animation
+  function showEnhancedLoading(root, message = 'Loading bundles...') {
+    root.innerHTML = `
+      <div class="bb__loading bb__loading--3d" role="status" aria-live="polite">
+        <div class="bb__loading-container">
+          <div class="bb__loading-spinner--3d" aria-hidden="true">
+            <div class="bb__spinner-ring bb__spinner-ring--outer"></div>
+            <div class="bb__spinner-ring bb__spinner-ring--middle"></div>
+            <div class="bb__spinner-ring bb__spinner-ring--inner"></div>
+            <div class="bb__spinner-core"></div>
+          </div>
+          <div class="bb__loading-content">
+            <h3>Loading Premium Collections</h3>
+            <p>${message}</p>
+            <div class="bb__loading-progress">
+              <div class="bb__progress-bar">
+                <div class="bb__progress-fill--3d"></div>
+              </div>
+              <div class="bb__progress-text">Preparing your experience...</div>
             </div>
           </div>
         </div>
-        <div class="bb__carousel-3d">
-          <div class="bb__progress-bar">
-            <div class="bb__progress-fill"></div>
-          </div>
-          <button class="bb__nav bb__nav--left" aria-label="Previous bundles" data-direction="prev">
-            <span class="bb__nav-icon" aria-hidden="true">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="15,18 9,12 15,6"></polyline>
-              </svg>
-            </span>
-          </button>
-          <div class="bb__carousel-ring" role="region" aria-label="3D Ring Bundle carousel">
-            ${this.bundles.map((bundle, index) => this.renderBundleCard(bundle, index)).join('')}
-          </div>
-          <button class="bb__nav bb__nav--right" aria-label="Next bundles" data-direction="next">
-            <span class="bb__nav-icon" aria-hidden="true">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9,6 15,12 9,18"></polyline>
-              </svg>
-            </span>
-          </button>
-          <div class="bb__dots" role="tablist" aria-label="3D Ring carousel pagination">
-            ${this.bundles.map((_, i) => `
-              <button class="bb__dot ${i === 0 ? 'bb__dot--active' : ''}" 
-                      role="tab" 
-                      aria-selected="${i===0}" 
-                      aria-label="Go to slide ${i+1}" 
-                      data-index="${i}">
-                <span class="bb__dot-progress"></span>
-              </button>
-            `).join('')}
-          </div>
-        </div>
-      `;
-      
-      this.container.innerHTML = sliderHTML;
-      
-      // Cache DOM elements
-      this.ring = this.container.querySelector('.bb__carousel-ring');
-      this.leftBtn = this.container.querySelector('.bb__nav--left');
-      this.rightBtn = this.container.querySelector('.bb__nav--right');
-      this.cards = Array.from(this.container.querySelectorAll('.bb__bundle-card'));
-      this.dots = Array.from(this.container.querySelectorAll('.bb__dot'));
-      this.progressBar = this.container.querySelector('.bb__progress-fill');
-      
-      // Enhanced card animations with stagger
-      this.cards.forEach((card, index) => {
-        card.style.animationDelay = `${index * 200}ms`;
-        card.classList.add('bb__card-animate-in');
-      });
-    }
-    
-    renderBundleCard(bundle, index) {
-      const hasDiscount = bundle.originalPrice && bundle.originalPrice > bundle.finalPrice;
-      const discountPercent = hasDiscount ? Math.round(((bundle.originalPrice - bundle.finalPrice) / bundle.originalPrice) * 100) : 0;
-      
-      return `
-        <div class="bb__bundle-card" data-bundle-id="${bundle.id}" data-index="${index}">
-          ${hasDiscount ? `<div class="bb__discount-badge">${discountPercent}% OFF</div>` : ''}
-          <div class="bb__bundle-image">
-            ${bundle.imageUrl ? 
-              `<img src="${utils.makeAbsolute(bundle.imageUrl)}" alt="${bundle.title}" loading="lazy"/>` : 
-              `<div class="bb__bundle-placeholder" aria-hidden="true">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M9 1v6m6-6v6"></path>
-                </svg>
-              </div>`
-            }
-          </div>
-          <div class="bb__bundle-info">
-            <div class="bb__bundle-header">
-              <h3 class="bb__bundle-title">${bundle.title}</h3>
-            </div>
-            ${bundle.description ? `<p class="bb__bundle-desc">${bundle.description}</p>` : ''}
-            <div class="bb__bundle-meta" role="list">
-              <span class="bb__bundle-type" role="listitem">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"></path>
-                </svg>
-                ${bundle.type}
-              </span>
-              <span class="bb__bundle-products" role="listitem">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="9" cy="21" r="1"></circle>
-                  <circle cx="20" cy="21" r="1"></circle>
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                </svg>
-                ${bundle.productCount} items
-              </span>
-              ${bundle.wrapCount > 0 ? `
-                <span class="bb__bundle-wraps" role="listitem">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                  </svg>
-                  ${bundle.wrapCount} wraps
-                </span>
-              ` : ''}
-            </div>
-            
-            <button class="bb__bundle-select" onclick="selectBundle('${bundle.id}')" aria-describedby="bundle-${bundle.id}-desc">
-              <span class="bb__btn-text">Select 3D Bundle</span>
-              <span class="bb__btn-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M5 12h14m-7-7l7 7-7 7"></path>
-                </svg>
-              </span>
-            </button>
-          </div>
-        </div>
-      `;
-    }
-    
-    initializeRingPositions() {
-      this.updateRingPositions();
-    }
-    
-    updateRingPositions() {
-      const radius = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--bb-ring-radius')) || 400;
-      
-      this.cards.forEach((card, index) => {
-        const angle = (index * this.angleStep) + this.rotationAngle;
-        const x = Math.cos(angle) * radius;
-        const z = Math.sin(angle) * radius;
-        
-        // Calculate distance from center for scaling and opacity
-        const normalizedAngle = ((angle % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
-        const distanceFromFront = Math.abs(normalizedAngle - Math.PI);
-        const scale = 0.7 + (0.4 * (1 - distanceFromFront / Math.PI));
-        const opacity = 0.5 + (0.5 * (1 - distanceFromFront / Math.PI));
-        
-        // Determine if this is the center card
-        const isCenterCard = index === this.currentIndex;
-        
-        card.style.transform = `
-          translate(-50%, -50%)
-          translate3d(${x}px, 0, ${z}px)
-          rotateY(${-angle}rad)
-          scale(${isCenterCard ? 1.1 : scale})
-        `;
-        card.style.opacity = isCenterCard ? 1 : opacity;
-        card.style.zIndex = isCenterCard ? 10 : Math.floor((1 - distanceFromFront / Math.PI) * 5);
-        
-        // Add center class for styling
-        card.classList.toggle('bb__bundle-card--center', isCenterCard);
-      });
-      
-      // Update ring rotation
-      if (this.ring) {
-        this.ring.style.transform = `translate(-50%, -50%) rotateX(15deg) rotateY(${-this.rotationAngle}rad)`;
-      }
-    }
-    
-    setupEventListeners() {
-      // Navigation buttons
-      this.leftBtn?.addEventListener('click', () => this.navigate('prev'));
-      this.rightBtn?.addEventListener('click', () => this.navigate('next'));
-      
-      // Keyboard navigation
-      this.container?.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowLeft') {
-          e.preventDefault();
-          this.navigate('prev');
-        } else if (e.key === 'ArrowRight') {
-          e.preventDefault();
-          this.navigate('next');
-        }
-      });
-      
-      // Enhanced dots with progress animation
-      this.dots.forEach((dot) => {
-        dot.addEventListener('click', () => {
-          const idx = Number(dot.getAttribute('data-index') || 0);
-          this.goToSlide(idx);
-        });
-        
-        dot.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            dot.click();
-          }
-        });
-      });
-      
-      // Enhanced touch/swipe support
-      this.setupTouchEvents();
-      
-      // Pause autoplay on hover/focus
-      this.container.addEventListener('mouseenter', () => {
-        this.stopAutoplay();
-        this.container.classList.add('bb__carousel-paused');
-      });
-      
-      this.container.addEventListener('mouseleave', () => {
-        this.startAutoplay();
-        this.container.classList.remove('bb__carousel-paused');
-      });
-      
-      this.container.addEventListener('focusin', () => this.stopAutoplay());
-      this.container.addEventListener('focusout', () => this.startAutoplay());
-      
-      // Mouse move for subtle parallax effects
-      this.container.addEventListener('mousemove', (e) => {
-        this.handleMouseMove(e);
-      });
-      
-      // Resize handler
-      window.addEventListener('resize', utils.debounce(() => {
-        this.updateNavigation();
-        this.updateProgressBar();
-        this.updateRingPositions();
-      }, 250));
-    }
-    
-    handleMouseMove(e) {
-      const rect = this.container.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const mouseX = e.clientX - centerX;
-      const mouseY = e.clientY - centerY;
-      
-      // Subtle parallax effect
-      const rotateX = (mouseY / rect.height) * 3;
-      const rotateY = (mouseX / rect.width) * 3;
-      
-      if (this.ring) {
-        this.ring.style.transform = `
-          translate(-50%, -50%) 
-          rotateX(${15 + rotateX}deg) 
-          rotateY(${-this.rotationAngle + (rotateY * 0.1)}rad)
-        `;
-      }
-    }
-    
-    setupTouchEvents() {
-      const threshold = 50;
-      
-      this.container?.addEventListener('touchstart', (e) => {
-        if (!e.touches || e.touches.length !== 1) return;
-        const touch = e.touches[0];
-        this.touchStartX = touch.clientX;
-        this.touchStartY = touch.clientY;
-        this.isSwiping = true;
-        this.stopAutoplay();
-      }, { passive: true });
-      
-      this.container?.addEventListener('touchmove', (e) => {
-        if (!this.isSwiping || !e.touches || e.touches.length !== 1) return;
-        const touch = e.touches[0];
-        const deltaX = touch.clientX - this.touchStartX;
-        const deltaY = touch.clientY - this.touchStartY;
-        
-        if (Math.abs(deltaY) > Math.abs(deltaX)) return;
-        
-        if (Math.abs(deltaX) > threshold) {
-          this.isSwiping = false;
-          if (deltaX < 0) {
-            this.navigate('next');
-          } else {
-            this.navigate('prev');
-          }
-        }
-      }, { passive: true });
-      
-      this.container?.addEventListener('touchend', () => {
-        this.isSwiping = false;
-        setTimeout(() => this.startAutoplay(), 2000);
-      }, { passive: true });
-    }
-    
-    setupIntersectionObserver() {
-      this.observer = utils.createIntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('bb__card-visible');
-          }
-        });
-      }, { threshold: 0.2 });
-      
-      if (this.observer) {
-        this.cards.forEach(card => this.observer.observe(card));
-      }
-    }
-    
-    navigate(direction) {
-      if (this.isAnimating || !this.cards.length) return;
-      
-      this.stopAutoplay();
-      this.isAnimating = true;
-      
-      if (direction === 'prev') {
-        this.currentIndex = this.currentIndex <= 0 ? this.cards.length - 1 : this.currentIndex - 1;
-        this.rotationAngle += this.angleStep;
-      } else {
-        this.currentIndex = this.currentIndex >= this.cards.length - 1 ? 0 : this.currentIndex + 1;
-        this.rotationAngle -= this.angleStep;
-      }
-      
-      this.updateRingPositions();
-      this.updateNavigation();
-      this.updateProgressBar();
-      
-      // Add haptic feedback if available
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
-      }
-      
-      setTimeout(() => {
-        this.isAnimating = false;
-      }, 800);
-      
-      // Restart autoplay after user interaction
-      setTimeout(() => this.startAutoplay(), 3000);
-    }
-    
-    goToSlide(index) {
-      if (this.isAnimating || index === this.currentIndex) return;
-      
-      this.stopAutoplay();
-      this.isAnimating = true;
-      
-      const diff = index - this.currentIndex;
-      this.rotationAngle -= diff * this.angleStep;
-      this.currentIndex = index;
-      
-      this.updateRingPositions();
-      this.updateNavigation();
-      this.updateProgressBar();
-      
-      setTimeout(() => {
-        this.isAnimating = false;
-        this.startAutoplay();
-      }, 800);
-    }
-    
-    updateNavigation() {
-      if (!this.leftBtn || !this.rightBtn || !this.cards.length) return;
-      
-      // Update ARIA labels
-      this.leftBtn.setAttribute('aria-label', 'Previous 3D ring bundles');
-      this.rightBtn.setAttribute('aria-label', 'Next 3D ring bundles');
-
-      // Update dots state with animation
-      if (this.dots && this.dots.length) {
-        this.dots.forEach((dot, i) => {
-          const active = i === this.currentIndex;
-          dot.classList.toggle('bb__dot--active', active);
-          dot.setAttribute('aria-selected', String(active));
-          
-          // Animate dot progress
-          const progress = dot.querySelector('.bb__dot-progress');
-          if (progress) {
-            if (active) {
-              progress.style.transform = 'scaleX(1)';
-            } else {
-              progress.style.transform = 'scaleX(0)';
-            }
-          }
-        });
-      }
-    }
-    
-    addProgressIndicator() {
-      if (!this.progressBar) return;
-      this.updateProgressBar();
-    }
-    
-    updateProgressBar() {
-      if (!this.progressBar || !this.cards.length) return;
-      
-      const progress = ((this.currentIndex + 1) / this.cards.length) * 100;
-      this.progressBar.style.width = `${progress}%`;
-    }
-    
-    startAutoplay() {
-      const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (prefersReduced) return;
-      if (this.autoplayTimer || this.cards.length <= 1) return;
-      
-      this.autoplayTimer = setInterval(() => {
-        this.navigate('next');
-      }, this.autoplayDelay);
-    }
-    
-    stopAutoplay() {
-      if (this.autoplayTimer) {
-        clearInterval(this.autoplayTimer);
-        this.autoplayTimer = null;
-      }
-    }
-    
-    destroy() {
-      this.stopAutoplay();
-      if (this.observer) {
-        this.observer.disconnect();
-      }
-      window.removeEventListener('resize', this.updateNavigation);
-    }
+      </div>
+    `;
   }
 
   // Keep existing BundleBuilder class unchanged for compatibility
@@ -495,7 +80,7 @@
       this.selected = new Map();
       this.selectedWrap = null;
       this.selectedCard = null;
-      this.messageValue = '';
+      // personalization removed
       this.productVariants = new Map();
       
       this.init();
@@ -563,9 +148,6 @@
       
       if (this.selectedWrap) price += (this.selectedWrap.priceCents || 0);
       if (this.selectedCard) price += (this.selectedCard.priceCents || 0);
-      if (this.bundle.allowMessage && this.messageValue && this.bundle.personalizationFeeCents) {
-        price += this.bundle.personalizationFeeCents;
-      }
       
       return price;
     }
@@ -598,7 +180,6 @@
           ${this.renderProducts()}
           ${this.renderWrappingOptions()}
           ${this.renderCardOptions()}
-          ${this.renderMessageSection()}
           ${this.renderSummary(price)}
         </div>
       `;
@@ -842,49 +423,7 @@
       `;
     }
     
-    renderMessageSection() {
-      if (!this.bundle.allowMessage) return '';
-      
-      const charLimit = this.bundle.messageCharLimit || 0;
-      const remaining = charLimit ? Math.max(0, charLimit - (this.messageValue?.length || 0)) : 0;
-      
-      return `
-        <div class="bb__msgwrap">
-          <div class="bb__section-header">
-            <h4>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-              </svg>
-              Personal Message
-            </h4>
-            ${charLimit ? `<span class="bb__char-counter ${remaining < 20 ? 'bb__char-counter--warning' : ''}">${remaining} characters left</span>` : ''}
-          </div>
-          <p class="bb__section-desc">Add a personal note to make your gift extra special:</p>
-          <div class="bb__message-input-wrapper">
-            <textarea class="bb__msg" placeholder="Write your heartfelt message here..." 
-                      ${charLimit ? `maxlength="${charLimit}"` : ''} 
-                      aria-describedby="message-info">${this.messageValue || ''}</textarea>
-            <div class="bb__message-suggestions">
-              <span class="bb__suggestion" data-message="Wishing you joy and happiness!">💝 Wishing you joy and happiness!</span>
-              <span class="bb__suggestion" data-message="Hope this brings a smile to your face!">😊 Hope this brings a smile to your face!</span>
-              <span class="bb__suggestion" data-message="Thinking of you with love.">💕 Thinking of you with love.</span>
-            </div>
-          </div>
-          <div id="message-info">
-            ${this.bundle.personalizationFeeCents ? 
-              `<div class="bb__fee">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <path d="M12 6v6l4 2"></path>
-                </svg>
-                Personalization fee: $${utils.money(this.bundle.personalizationFeeCents)}
-              </div>` : 
-              ''
-            }
-          </div>
-        </div>
-      `;
-    }
+    renderMessageSection() { return ''; }
     
     renderSummary(price) {
       const canAddToCart = this.selected.size > 0 || this.selectedWrap || this.selectedCard;
@@ -1048,42 +587,7 @@
         });
       });
       
-      // Message input with suggestions
-      const messageEl = this.root.querySelector('.bb__msg');
-      if (messageEl) {
-        messageEl.addEventListener('input', (e) => {
-          this.messageValue = e.target.value || '';
-          
-          const limit = Number(this.bundle.messageCharLimit || 0);
-          if (limit) {
-            const remaining = Math.max(0, limit - this.messageValue.length);
-            const counterEl = this.root.querySelector('.bb__char-counter');
-            if (counterEl) {
-              counterEl.textContent = `${remaining} characters left`;
-              counterEl.classList.toggle('bb__char-counter--warning', remaining < 20);
-            }
-          }
-          
-          // Update price without full re-render
-          const price = this.calculatePrice();
-          const priceEl = this.root.querySelector('.bb__price-value');
-          if (priceEl) {
-            priceEl.textContent = `$${utils.money(price)}`;
-          }
-        });
-      }
-      
-      // Message suggestions
-      this.root.querySelectorAll('.bb__suggestion').forEach(suggestion => {
-        suggestion.addEventListener('click', (e) => {
-          const message = e.target.dataset.message;
-          const messageEl = this.root.querySelector('.bb__msg');
-          if (messageEl && message) {
-            messageEl.value = message;
-            messageEl.dispatchEvent(new Event('input'));
-          }
-        });
-      });
+      // personalization inputs removed
       
       // Add to cart button with loading state
       const addBtn = this.root.querySelector('.bb__add');
@@ -1114,11 +618,7 @@
           return;
         }
         
-        if (this.bundle.allowMessage && this.bundle.messageCharLimit && 
-            this.messageValue.length > this.bundle.messageCharLimit) {
-          this.showNotification('Message too long', 'error');
-          return;
-        }
+        
         
         if (this.bundle.minItems && this.selected.size < this.bundle.minItems) {
           this.showNotification(`Please select at least ${this.bundle.minItems} item${this.bundle.minItems > 1 ? 's' : ''}`, 'warning');
@@ -1150,8 +650,7 @@
               selectedProductIds,
               selectedVariantMap,
               selectedWrapId: this.selectedWrap ? this.selectedWrap.id : null,
-              selectedCardId: this.selectedCard ? this.selectedCard.id : null,
-              messageValue: this.messageValue
+              selectedCardId: this.selectedCard ? this.selectedCard.id : null
             })
           });
         } else {
@@ -1162,8 +661,7 @@
               selectedProductIds,
               selectedVariantMap,
               selectedWrapId: this.selectedWrap ? this.selectedWrap.id : null,
-              selectedCardId: this.selectedCard ? this.selectedCard.id : null,
-              messageValue: this.messageValue
+              selectedCardId: this.selectedCard ? this.selectedCard.id : null
             })
           });
         }
@@ -1347,7 +845,7 @@
     };
 
     try {
-      if (!bundleId) {
+    if (!bundleId) {
         const listUrl = apiBase.endsWith('/bundles') ? apiBase : (apiBase + '/bundles');
         await showAllBundles(root, listUrl);
       } else {
@@ -1361,13 +859,26 @@
 
   async function showAllBundles(root, apiBase) {
     try {
-      let response = await fetch(`${apiBase}?shop=${Shopify.shop}`, {
+      // Show enhanced loading screen
+      showEnhancedLoading(root, 'Discovering premium collections...');
+      // Show enhanced loading screen
+      showEnhancedLoading(root, 'Discovering premium collections...');
+      
+      const shopDomain = (window.Shopify && Shopify.shop) ? String(Shopify.shop) : '';
+      const ts = Date.now();
+      const withShop = shopDomain ? `${apiBase}?shop=${encodeURIComponent(shopDomain)}&_t=${ts}` : `${apiBase}?_t=${ts}`;
+      let response = await fetch(withShop, {
         method: 'GET',
         mode: 'cors',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store'
       });
       if (!response.ok && !String(apiBase).startsWith('/')) {
-        response = await fetch(`/apps/bundles?shop=${Shopify.shop}`);
+        const fallback = shopDomain ? `/apps/bundles?shop=${encodeURIComponent(shopDomain)}&_t=${Date.now()}` : `/apps/bundles?_t=${Date.now()}`;
+        response = await fetch(fallback, { cache: 'no-store' });
+      }
+      if (!response.ok) {
+        try { response = await fetch(`${apiBase}?_t=${Date.now()}`, { method: 'GET', mode: 'cors', headers: { 'Accept': 'application/json' }, cache: 'no-store' }); } catch(_) {}
       }
       
       if (!response.ok) {
@@ -1385,6 +896,25 @@
         if (!window.ENHANCED_BUNDLE_CONFIG) window.ENHANCED_BUNDLE_CONFIG = {}; 
         window.ENHANCED_BUNDLE_CONFIG.plan = data.plan || 'FREE'; 
         window.ENHANCED_BUNDLE_CONFIG.hero = data.hero || null;
+        // Seed carousel config from server if provided
+        if (data.carousel) {
+          const c = data.carousel;
+          window.ENHANCED_BUNDLE_CONFIG.carouselStyle = c.style || window.ENHANCED_BUNDLE_CONFIG.carouselStyle;
+          window.ENHANCED_BUNDLE_CONFIG.cardStyle = c.cardStyle || window.ENHANCED_BUNDLE_CONFIG.cardStyle;
+          window.ENHANCED_BUNDLE_CONFIG.enableAutoplay = (c.autoplay != null ? !!c.autoplay : window.ENHANCED_BUNDLE_CONFIG.enableAutoplay);
+          window.ENHANCED_BUNDLE_CONFIG.autoplaySpeed = (c.speedMs != null ? Number(c.speedMs) : window.ENHANCED_BUNDLE_CONFIG.autoplaySpeed);
+          if (c.buttonBg != null) window.ENHANCED_BUNDLE_CONFIG.buttonBg = c.buttonBg;
+          if (c.badgeBg != null) window.ENHANCED_BUNDLE_CONFIG.badgeBg = c.badgeBg;
+          if (c.containerBg != null) window.ENHANCED_BUNDLE_CONFIG.containerBg = c.containerBg;
+        }
+        // Apply persisted colors to container on initial load
+        try {
+          const cfg = window.ENHANCED_BUNDLE_CONFIG;
+          const rs = root.style;
+          if (cfg.buttonBg) rs.setProperty('--bb-button-bg', cfg.buttonBg); else rs.removeProperty('--bb-button-bg');
+          if (cfg.badgeBg) rs.setProperty('--bb-badge-bg', cfg.badgeBg); else rs.removeProperty('--bb-badge-bg');
+          if (cfg.containerBg) rs.background = cfg.containerBg; else rs.background = '';
+        } catch(_) {}
       } catch(_) {}
 
       // cache bundles on the root so we can re-render header on setting changes without refetch
@@ -1398,9 +928,14 @@
 
   async function showSpecificBundle(root, bundleId, apiBase) {
     try {
+      // Show enhanced loading for specific bundle
+      showEnhancedLoading(root, 'Loading bundle details...');
+      // Show enhanced loading for specific bundle
+      showEnhancedLoading(root, 'Loading bundle details...');
+      
       const shop = (window.Shopify && Shopify.shop) || '';
-      const url = `/apps/bundles/${bundleId}?shop=${shop}`;
-      const response = await fetch(url, { cache: 'no-store' });
+      const url = `/apps/bundles/${bundleId}?shop=${shop}&_t=${Date.now()}`;
+      const response = await fetch(url, { cache: 'no-store', headers: { 'Accept': 'application/json' } });
       if (!response.ok) throw new Error(`Failed to fetch bundle: ${response.status}`);
       
       const data = await response.json();
@@ -1422,6 +957,17 @@
   function renderBundleGrid(root, bundles) {
     const planVal = (window.ENHANCED_BUNDLE_CONFIG && window.ENHANCED_BUNDLE_CONFIG.plan) || 'FREE';
     const cfg = (window.ENHANCED_BUNDLE_CONFIG && window.ENHANCED_BUNDLE_CONFIG.hero) || null;
+    // Also accept per-section data attributes as fallback when global is missing
+    try {
+      if (!window.ENHANCED_BUNDLE_CONFIG) window.ENHANCED_BUNDLE_CONFIG = {};
+      const cfg = window.ENHANCED_BUNDLE_CONFIG;
+      const ds = root.dataset || {};
+      if (cfg.carouselStyle == null && ds.carouselStyle) cfg.carouselStyle = ds.carouselStyle;
+      if (cfg.enableAutoplay == null && ds.enableAutoplay) cfg.enableAutoplay = (String(ds.enableAutoplay) === 'true' || ds.enableAutoplay === 'on' || ds.enableAutoplay === '1');
+      if (cfg.autoplaySpeed == null && ds.autoplaySpeed) cfg.autoplaySpeed = Number(ds.autoplaySpeed) * 1000; // section gives seconds
+      if (cfg.keyboardNav == null && ds.keyboardNav) cfg.keyboardNav = (String(ds.keyboardNav) === 'true' || ds.keyboardNav === 'on' || ds.keyboardNav === '1');
+      if (cfg.touchGestures == null && ds.touchGestures) cfg.touchGestures = (String(ds.touchGestures) === 'true' || ds.touchGestures === 'on' || ds.touchGestures === '1');
+    } catch(_) {}
     const heroEnabled = !cfg || cfg.enabled !== false;
     const heroEmoji = (cfg && cfg.emoji) || '🎁';
     const heroTitle = (cfg && cfg.title) || 'Premium Collection';
@@ -1436,7 +982,7 @@
           <h2 class="bb__title">${heroTitle}</h2>
           <p class="bb__desc">${heroSubtitle}</p>
         </div>` : ''}
-        <div class="bb__swiper swiper">
+        <div class="bb__swiper swiper" role="region" aria-label="Bundle carousel">
           <div class="swiper-wrapper">
             ${bundles.map((b) => `
               <div class="swiper-slide">
@@ -1444,9 +990,9 @@
               </div>
             `).join('')}
           </div>
-          <div class="swiper-pagination"></div>
-          <button class="bb__nav bb__nav--left swiper-button-prev" aria-label="Previous"></button>
-          <button class="bb__nav bb__nav--right swiper-button-next" aria-label="Next"></button>
+          <div class="swiper-pagination" role="tablist" aria-label="Bundle pagination"></div>
+          <button class="bb__nav bb__nav--left swiper-button-prev" aria-label="Previous bundle"></button>
+          <button class="bb__nav bb__nav--right swiper-button-next" aria-label="Next bundle"></button>
         </div>
         
       </div>
@@ -1455,50 +1001,170 @@
     root.innerHTML = headerHTML;
 
     ensureSwiperAssets().then(() => {
-      // eslint-disable-next-line no-undef
-      const plan = (window.ENHANCED_BUNDLE_CONFIG && window.ENHANCED_BUNDLE_CONFIG.plan) || 'FREE';
+      const cfgAll = (window.ENHANCED_BUNDLE_CONFIG || {});
+      const plan = cfgAll.plan || 'FREE';
+      const style = cfgAll.carouselStyle || 'coverflow';
       const isPro = plan === 'PRO';
-      try {
-        root.classList.remove('bb--free', 'bb--pro');
-        root.classList.add(isPro ? 'bb--pro' : 'bb--free');
-      } catch(_) { /* no-op */ }
-      const totalSlides = (bundles && bundles.length) ? bundles.length : 0;
-      const enableLoop = isPro && totalSlides >= 4; // guard: need enough slides for loop
-      const swiper = new Swiper('.bb__swiper', {
-        effect: isPro ? 'coverflow' : 'slide',
-        grabCursor: isPro,
-        centeredSlides: isPro,
-        slidesPerView: 'auto',
-        spaceBetween: isPro ? 0 : 6,
-        initialSlide: 0,
-        loop: enableLoop,
-        slidesPerGroup: 1,
-        watchOverflow: true,
-        loopedSlides: enableLoop ? Math.min(totalSlides, 6) : undefined,
-        coverflowEffect: isPro ? {
-          rotate: 30,
-          stretch: -20, // negative stretch increases space between slides visually
-          depth: 250,
-          modifier: 1,
-          slideShadows: false
+      const isCube = style === 'cube' || style === 'cube-modern';
+
+  const totalSlides = (bundles && bundles.length) ? bundles.length : 0;
+  // Loop any style when more than one slide to keep pagination continuous
+  const enableLoop = totalSlides > 1;
+  // Autoplay from config (default ON). Works for all styles including cube
+  const enableAutoplay = (cfgAll.enableAutoplay !== false);
+  const autoplayDelayMs = Number(cfgAll.autoplaySpeed || 3500);
+
+      const chosenEffect = (() => {
+        if (!isPro) return 'slide';
+        if (style === 'cube-modern') return 'cube';
+        if (style === 'flip') return 'flip';
+        if (style === 'slide') return 'slide';
+        if (style === 'motion') return 'slide';
+        return 'coverflow';
+      })();
+
+      const modules = [];
+      if (chosenEffect === 'cube' && window.Swiper.EffectCube) {
+        modules.push(window.Swiper.EffectCube);
+      }
+      if (chosenEffect === 'flip' && window.Swiper.EffectFlip) {
+        modules.push(window.Swiper.EffectFlip);
+      }
+      if (chosenEffect === 'coverflow' && window.Swiper.EffectCoverflow) {
+        modules.push(window.Swiper.EffectCoverflow);
+      }
+      if (window.Swiper.Navigation) modules.push(window.Swiper.Navigation);
+      if (window.Swiper.Pagination) modules.push(window.Swiper.Pagination);
+      if (window.Swiper.Keyboard) modules.push(window.Swiper.Keyboard);
+      if (window.Swiper.A11y) modules.push(window.Swiper.A11y);
+
+  const el = root.querySelector('.bb__swiper');
+  
+  // Add CSS class for the chosen style on both container and swiper so CSS matches
+  try {
+    const bbContainer = root.querySelector('.bb');
+    const STYLE_FLAGS = ['bb--cube','bb--cube-modern','bb--flip','bb--coverflow','bb--classic','bb--loop','bb--motion'];
+    const CARD_STYLE_FLAGS = ['bb--card-minimal','bb--card-modern','bb--card-glass','bb--card-premium','bb--card-premium-gradient','bb--card-neumorph','bb--card-outline','bb--card-image-dominant','bb--card-depth','bb--card-flip'];
+    
+    if (bbContainer) {
+      STYLE_FLAGS.forEach(c => bbContainer.classList.remove(c));
+      bbContainer.classList.add(`bb--${style}`);
+      
+      // Apply card style class
+      const cardStyle = cfgAll.cardStyle || 'modern';
+      CARD_STYLE_FLAGS.forEach(c => bbContainer.classList.remove(c));
+      bbContainer.classList.add(`bb--card-${cardStyle}`);
+    }
+    if (el) {
+      STYLE_FLAGS.forEach(c => el.classList.remove(c));
+      el.classList.add(`bb--${style}`);
+      
+      // Apply card style class to swiper as well
+      const cardStyle = cfgAll.cardStyle || 'modern';
+      CARD_STYLE_FLAGS.forEach(c => el.classList.remove(c));
+      el.classList.add(`bb--card-${cardStyle}`);
+    }
+  } catch(_) {}
+  
+  const swiper = new Swiper(el, {
+        modules,
+        effect: chosenEffect,
+        grabCursor: true,
+        roundLengths: true,
+        centeredSlides: isCube ? true : isPro,
+        slidesPerView: isCube ? 1 : 'auto',
+        spaceBetween: isCube ? 0 : 16,
+    loop: isCube ? false : enableLoop,   // ✅ cube runs without Swiper loop to avoid overlap
+    rewind: true,
+        cubeEffect: isCube ? {
+          shadow: true,
+          shadowOffset: 40,
+          shadowScale: 0.7,
+          slideShadows: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? false : true
         } : undefined,
-        autoplay: isPro ? {
-          delay: 3500,
-          disableOnInteraction: false
-        } : false,
-        navigation: {
-          nextEl: '.swiper-button-next',
-          prevEl: '.swiper-button-prev'
+        coverflowEffect: chosenEffect === 'coverflow' ? {
+          rotate: 30,
+          stretch: 0,
+          depth: 140,
+          modifier: 1,
+          slideShadows: true,
+        } : undefined,
+        flipEffect: chosenEffect === 'flip' ? {
+          slideShadows: true,
+          limitRotation: true,
+        } : undefined,
+        pagination: { 
+          el: el.querySelector('.swiper-pagination'), 
+          clickable: true,
+          bulletActiveClass: 'swiper-pagination-bullet-active',
+          renderBullet: function (index, className) {
+            return `<span class="${className}" role="tab" aria-label="Go to slide ${index + 1}"></span>`;
+          }
         },
-        pagination: {
-          el: '.swiper-pagination',
-          clickable: true
+        navigation: { 
+          nextEl: el.querySelector('.swiper-button-next'), 
+          prevEl: el.querySelector('.swiper-button-prev') 
         },
-        breakpoints: {
-          0: { slidesPerView: 'auto', spaceBetween: isPro ? 0 : 8 },
-          640: { slidesPerView: 'auto', spaceBetween: isPro ? 0 : 10 },
-          1024: { slidesPerView: isPro ? 'auto' : 'auto', spaceBetween: isPro ? 0 : 12 }
-        }
+        keyboard: {
+          enabled: cfgAll.keyboardNav !== false,
+          onlyInViewport: true,
+        },
+        a11y: {
+          enabled: true,
+          prevSlideMessage: 'Previous slide',
+          nextSlideMessage: 'Next slide',
+          firstSlideMessage: 'This is the first slide',
+          lastSlideMessage: 'This is the last slide',
+        },
+    autoplay: enableAutoplay ? { delay: autoplayDelayMs, disableOnInteraction: false, pauseOnMouseEnter: true } : false,
+    watchOverflow: true,
+    resistanceRatio: 0.85,
+    speed: isCube ? 700 : 500,
+    on: {
+      afterInit(s) {
+        try {
+          s.updateSlides();
+          // Map any extra slides to the 4 cube faces by index, prevents drift
+          s.slides.forEach((slide, idx) => {
+            slide.style.transformStyle = 'preserve-3d';
+            slide.style.backfaceVisibility = 'hidden';
+            // Normalize any residual scale/translate
+            if (slide.style && slide.style.transform) {
+              slide.style.transform = slide.style.transform.replace(/scale\([^)]+\)/, 'scale(1)');
+            }
+            // No hard transforms set here; Swiper handles faces. This ensures CSS baseline.
+          });
+          if (enableAutoplay && s.autoplay) s.autoplay.start();
+        } catch(_) {}
+      },
+      resize(s) { try { s.updateSlides(); } catch(_) {} },
+      slideChangeTransitionEnd(s) {
+        if (!isCube) return;
+        try {
+          const slides = Array.from(s.slides || []);
+          const total = slides.length;
+          // Reassert 3D context and normalize transforms each transition
+          slides.forEach((slide, i) => {
+            slide.style.transformStyle = 'preserve-3d';
+            slide.style.backfaceVisibility = 'hidden';
+            slide.style.marginLeft = 'auto';
+            slide.style.marginRight = 'auto';
+            if (slide.style.transform) {
+              slide.style.transform = slide.style.transform.replace(/scale\([^)]+\)/, 'scale(1)');
+            }
+          });
+          // Modulo mapping hint (no manual transform override; Swiper keeps cube) to avoid overlaps
+          const active = s.activeIndex % total;
+          if (Number.isFinite(active)) {
+            const activeSlide = slides[active];
+            if (activeSlide) {
+              activeSlide.style.marginLeft = 'auto';
+              activeSlide.style.marginRight = 'auto';
+            }
+          }
+        } catch(_) {}
+      }
+    }
       });
     }).catch(() => {/* ignore asset load errors */});
 
@@ -1510,6 +1176,10 @@
       if ((isThemeEditor || debugFlag) && isProPlan) {
         attachHeroEditor(root);
       }
+      // Always attach carousel editor in editor/debug for live preview
+      if (isThemeEditor || /[?&]bbCarouselEditor=1(&|$)/.test(location.search)) {
+        attachCarouselEditor(root);
+      }
     } catch(_) { /* no-op */ }
   }
 
@@ -1518,6 +1188,16 @@
       const cfg = (window.ENHANCED_BUNDLE_CONFIG && window.ENHANCED_BUNDLE_CONFIG.hero) || {};
       const panel = document.createElement('div');
       panel.className = 'bb__editor';
+      panel.style.zIndex = '60';
+      panel.addEventListener('pointerdown', (e) => { e.stopPropagation(); }, { passive: true });
+      panel.addEventListener('touchstart', (e) => { e.stopPropagation(); }, { passive: true });
+      panel.addEventListener('wheel', (e) => { e.stopPropagation(); }, { passive: true });
+      panel.addEventListener('click', (e) => { e.stopPropagation(); });
+      panel.style.zIndex = '60';
+      panel.addEventListener('pointerdown', (e) => { e.stopPropagation(); }, { passive: true });
+      panel.addEventListener('touchstart', (e) => { e.stopPropagation(); }, { passive: true });
+      panel.addEventListener('wheel', (e) => { e.stopPropagation(); }, { passive: true });
+      panel.addEventListener('click', (e) => { e.stopPropagation(); });
       panel.innerHTML = (
         '<div class="bb__editor-title">Hero Editor (live preview)</div>'+
         '<label class="bb__editor-row"><input type="checkbox" class="bbE-enabled"> Show hero</label>'+
@@ -1577,15 +1257,14 @@
             headerEl.style.background = `linear-gradient(135deg, ${cfg2.colorStart} 0%, ${cfg2.colorEnd} 100%)`;
             const hasSubtitle = !!(cfg2.subtitle && String(cfg2.subtitle).trim().length);
             headerEl.innerHTML = (
-              `<div class=\"bb__hero-icons\" aria-hidden=\"true\">${cfg2.emoji || '🎁'}</div>`+
-              `<h2 class=\"bb__title\">${cfg2.title || ''}</h2>`+
-              (hasSubtitle ? `<p class=\"bb__desc\">${cfg2.subtitle}</p>` : '')
+              `<div class="bb__hero-icons" aria-hidden="true">${cfg2.emoji || '🎁'}</div>`+
+              `<h2 class="bb__title">${cfg2.title || ''}</h2>`+
+              (hasSubtitle ? `<p class="bb__desc">${cfg2.subtitle}</p>` : '')
             );
             bb.prepend(headerEl);
           }
         } catch(_) {}
       };
-
       ['change','input'].forEach(evt => {
         enabled.addEventListener(evt, update);
         emoji.addEventListener(evt, update);
@@ -1626,6 +1305,179 @@
     } catch(_) { /* no-op */ }
   }
 
+  function attachCarouselEditor(root){
+    try {
+      const isThemeEditor = typeof Shopify !== 'undefined' && Shopify && Shopify.designMode;
+      const debugFlag = /[?&]bbCarouselEditor=1(&|$)/.test(location.search);
+      const isProPlan = (window.ENHANCED_BUNDLE_CONFIG && window.ENHANCED_BUNDLE_CONFIG.plan) === 'PRO';
+      if (!(isThemeEditor || debugFlag)) return;
+
+      const cfg = (window.ENHANCED_BUNDLE_CONFIG || {});
+      const panel = document.createElement('div');
+      panel.className = 'bb__editor';
+      panel.innerHTML = (
+        '<div class="bb__editor-title">Carousel Editor (live preview)</div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
+        '<label class="bb__editor-row">Style '+
+          '<select class="bbC-style">'+
+            '<option value="slide">Classic Slide</option>'+
+            '<option value="coverflow">Coverflow (Swiper)</option>'+
+          '<option value="cube-modern">Cube (Modern)</option>'+
+          '<option value="motion">Center Pop (Custom)</option>'+
+          '</select>'+
+        '</label>'+
+        '<label class="bb__editor-row">Card style '+
+          '<select class="bbC-card">'+
+            '<option value="modern">Modern Glassmorphism</option>'+
+            '<option value="premium-gradient">Premium Gradient</option>'+
+            '<option value="minimal">Minimal Clean</option>'+
+            '<option value="glass">Enhanced Glass</option>'+
+            '<option value="neumorph">Neumorphism</option>'+
+            '<option value="outline">Bordered / Outline</option>'+
+            '<option value="image-dominant">Image-Dominant</option>'+
+            '<option value="depth">Card with Depth</option>'+
+            '<option value="flip">Flip Effect</option>'+
+          '</select>'+
+        '</label>'+
+        '<label class="bb__editor-row">Button color <input class="bbC-btncolor" type="color"/></label>'+
+        '<label class="bb__editor-row">Badge color <input class="bbC-badgecolor" type="color"/></label>'+
+        '<label class="bb__editor-row">Container background <input class="bbC-bg" type="color"/></label>'+
+        '<label class="bb__editor-row"><input type="checkbox" class="bbC-autoplay"> Enable autoplay</label>'+
+        '<label class="bb__editor-row">Speed (ms) <input type="number" class="bbC-speed" min="500" step="100" style="width:8em"></label>'+
+        '</div>'+
+        '<div class="bb__editor-row" style="justify-content:flex-end; gap:8px">'+
+          '<button type="button" class="bbC-save" style="padding:6px 12px;border:1px solid #e5e7eb;border-radius:8px;background:#111827;color:#fff;cursor:pointer">Save</button>'+
+          '<span class="bbC-status" style="font-size:12px;color:#6b7280"></span>'+
+        '</div>'
+      );
+      root.appendChild(panel);
+
+      const selStyle = panel.querySelector('.bbC-style');
+      const selCard = panel.querySelector('.bbC-card');
+      const chkAuto = panel.querySelector('.bbC-autoplay');
+      const numSpeed = panel.querySelector('.bbC-speed');
+      const inpBtn = panel.querySelector('.bbC-btncolor');
+      const inpBadge = panel.querySelector('.bbC-badgecolor');
+      const inpBg = panel.querySelector('.bbC-bg');
+
+      // Normalize and set initial values
+      const initialStyle = String(cfg.carouselStyle || 'coverflow');
+      if (selStyle.querySelector(`option[value="${initialStyle}"]`)) {
+        selStyle.value = initialStyle;
+      } else {
+        selStyle.value = 'slide';
+      }
+      selCard.value = (String(cfg.cardStyle || 'modern').toLowerCase().replace(/\s+/g,'-'));
+      chkAuto.checked = !!(cfg.enableAutoplay ?? true);
+      numSpeed.value = Number(cfg.autoplaySpeed || 3500);
+      try { inpBtn.value = toColor(cfg.buttonBg || '#6366f1'); } catch(_) {}
+      try { inpBadge.value = toColor(cfg.badgeBg || '#8b5cf6'); } catch(_) {}
+      try { inpBg.value = toColor(cfg.containerBg || (getComputedStyle(root).backgroundColor || '#0f172a')); } catch(_) {}
+
+      const applyColors = () => {
+        try {
+          if (!window.ENHANCED_BUNDLE_CONFIG) window.ENHANCED_BUNDLE_CONFIG = {};
+          const rs = root.style;
+          const btn = (inpBtn.value || '').trim();
+          const badge = (inpBadge.value || '').trim();
+          const bg = (inpBg.value || '').trim();
+          window.ENHANCED_BUNDLE_CONFIG.buttonBg = btn || undefined;
+          window.ENHANCED_BUNDLE_CONFIG.badgeBg = badge || undefined;
+          window.ENHANCED_BUNDLE_CONFIG.containerBg = bg || undefined;
+          if (btn) rs.setProperty('--bb-button-bg', btn); else rs.removeProperty('--bb-button-bg');
+          if (badge) rs.setProperty('--bb-badge-bg', badge); else rs.removeProperty('--bb-badge-bg');
+          if (bg) { rs.background = bg; } else { rs.background = ''; }
+        } catch(_) {}
+      };
+
+      const apply = () => {
+        try {
+          if (!window.ENHANCED_BUNDLE_CONFIG) window.ENHANCED_BUNDLE_CONFIG = {};
+          window.ENHANCED_BUNDLE_CONFIG.carouselStyle = selStyle.value;
+          window.ENHANCED_BUNDLE_CONFIG.cardStyle = selCard.value;
+          window.ENHANCED_BUNDLE_CONFIG.enableAutoplay = chkAuto.checked;
+          window.ENHANCED_BUNDLE_CONFIG.autoplaySpeed = Number(numSpeed.value || 3500);
+          // Keep latest colors without forcing rerender
+          applyColors();
+          // Re-render carousel with cached bundles
+          const bundles = root.__bb_bundles;
+          if (Array.isArray(bundles) && bundles.length) {
+            renderBundleGrid(root, bundles);
+          }
+        } catch(_) {}
+      };
+
+      // Changes that require re-render
+      ['change','input'].forEach(evt => {
+        selStyle.addEventListener(evt, apply);
+        selCard.addEventListener(evt, apply);
+        chkAuto.addEventListener(evt, apply);
+        numSpeed.addEventListener(evt, apply);
+      });
+      // Color pickers: only update variables to avoid panel losing focus
+      ['change','input'].forEach(evt => {
+        inpBtn.addEventListener(evt, applyColors);
+        inpBadge.addEventListener(evt, applyColors);
+        inpBg.addEventListener(evt, applyColors);
+      });
+
+      // Disable advanced effects on FREE
+      if (!isProPlan) {
+        ['cube','cube-modern','flip','coverflow','motion','loop'].forEach(v => {
+          const opt = selStyle.querySelector(`option[value="${v}"]`);
+          if (opt && v !== 'slide') opt.disabled = true;
+        });
+        selStyle.value = 'slide';
+      }
+
+      // Save handler (persist choices via app proxy)
+      const saveBtn = panel.querySelector('.bbC-save');
+      const statusEl = panel.querySelector('.bbC-status');
+      if (saveBtn) {
+        saveBtn.addEventListener('click', async (ev) => {
+          ev.preventDefault(); ev.stopPropagation();
+          try {
+            statusEl.textContent = 'Saving…';
+            const form = new FormData();
+            form.set('style', selStyle.value);
+            form.set('cardStyle', selCard.value);
+            form.set('autoplay', chkAuto.checked ? 'on' : 'off');
+            form.set('speedMs', String(Number(numSpeed.value || 3500)));
+            form.set('buttonBg', (inpBtn.value || ''));
+            form.set('badgeBg', (inpBadge.value || ''));
+            form.set('containerBg', (inpBg.value || ''));
+            const shopParam = (window.Shopify && Shopify.shop) ? `?shop=${encodeURIComponent(Shopify.shop)}` : '';
+            const res = await fetch(`/apps/bundles/carousel${shopParam}`, { method: 'POST', body: form, credentials: 'include', cache: 'no-store' });
+            let body = null; try { body = await res.json(); } catch(_) {}
+            if (res.ok && body && body.ok) {
+              statusEl.textContent = 'Saved';
+              try {
+                // Immediately update in-memory config and container bg to avoid refresh loops
+                if (!window.ENHANCED_BUNDLE_CONFIG) window.ENHANCED_BUNDLE_CONFIG = {};
+                window.ENHANCED_BUNDLE_CONFIG.carouselStyle = selStyle.value;
+                window.ENHANCED_BUNDLE_CONFIG.cardStyle = selCard.value;
+                window.ENHANCED_BUNDLE_CONFIG.enableAutoplay = chkAuto.checked;
+                window.ENHANCED_BUNDLE_CONFIG.autoplaySpeed = Number(numSpeed.value || 3500);
+                window.ENHANCED_BUNDLE_CONFIG.buttonBg = (inpBtn.value || '');
+                window.ENHANCED_BUNDLE_CONFIG.badgeBg = (inpBadge.value || '');
+                window.ENHANCED_BUNDLE_CONFIG.containerBg = (inpBg.value || '');
+                const rs = root.style; const bg = (inpBg.value || '').trim();
+                if (bg) rs.background = bg; else rs.background = '';
+              } catch(_) {}
+              setTimeout(() => statusEl.textContent = '', 2000);
+            } else {
+              statusEl.textContent = 'Save failed';
+              console.warn('[BundleApp] carousel save failed', res.status, body);
+            }
+          } catch(err) {
+            statusEl.textContent = 'Save failed';
+            console.error('[BundleApp] carousel save error', err);
+          }
+        });
+      }
+    } catch(_) { /* no-op */ }
+  }
+
   function toColor(v){
     try {
       if (!v) return '#000000';
@@ -1642,22 +1494,22 @@
           const hasDiscount = bundle.originalPrice && bundle.originalPrice > bundle.finalPrice;
           const discountPercent = hasDiscount ? Math.round(((bundle.originalPrice - bundle.finalPrice) / bundle.originalPrice) * 100) : 0;
           return `
-            <div class="bb__bundle-card">
-              ${hasDiscount ? `<div class="bb__discount-badge">${discountPercent}% OFF</div>` : ''}
+            <div class="bb__bundle-card" role="article" tabindex="0" aria-labelledby="bundle-${bundle.id}-title">
+              ${hasDiscount ? `<div class="bb__discount-badge" aria-label="${discountPercent}% discount">${discountPercent}% OFF</div>` : ''}
               <div class="bb__bundle-image">
                 ${bundle.imageUrl ? `<img src="${utils.makeAbsolute(bundle.imageUrl)}" alt="${bundle.title}" loading="lazy"/>` : ''}
               </div>
               <div class="bb__bundle-info">
                 <div class="bb__bundle-header">
-            <h3 class="bb__bundle-title">${bundle.title}</h3>
+            <h3 class="bb__bundle-title" id="bundle-${bundle.id}-title">${bundle.title}</h3>
           </div>
           ${bundle.description ? `<p class="bb__bundle-desc">${bundle.description}</p>` : ''}
-          <div class="bb__bundle-meta" role="list">
+          <div class="bb__bundle-meta" role="list" aria-label="Bundle details">
             <span class="bb__bundle-type" role="listitem">${bundle.type}</span>
             <span class="bb__bundle-products" role="listitem">${bundle.productCount} items</span>
-            ${bundle.wrapCount > 0 ? `<span class="bb__bundle-wraps" role="listitem">${bundle.wrapCount} wraps</span>` : ''}
+            <span class="bb__bundle-wraps" role="listitem">${bundle.wrapCount ?? 0} wraps</span>
           </div>
-          <button class="bb__bundle-select" onclick="selectBundle('${bundle.id}')">
+          <button class="bb__bundle-select" onclick="selectBundle('${bundle.id}')" aria-describedby="bundle-${bundle.id}-title">
             <span class="bb__btn-text">Select Bundle</span>
           </button>
         </div>
@@ -1682,12 +1534,25 @@
           s.src = 'https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js';
           s.async = true;
           s.setAttribute('data-bb-swiper', '1');
-          s.onload = () => resolve();
+          s.onload = () => {
+            // Ensure modules are available
+            if (window.Swiper && window.Swiper.EffectCube) {
+              resolve();
+            } else {
+              reject(new Error('Swiper modules not loaded'));
+            }
+          };
           s.onerror = () => reject();
           document.body.appendChild(s);
         } else {
           // wait a tick for existing script to load
-          const check = () => window.Swiper ? resolve() : setTimeout(check, 50);
+          const check = () => {
+            if (window.Swiper && window.Swiper.EffectCube) {
+              resolve();
+            } else {
+              setTimeout(check, 50);
+            }
+          };
           check();
         }
       } catch (e) { reject(e); }
@@ -1696,7 +1561,7 @@
 
   function showError(root, title, message) {
     root.innerHTML = `
-      <div class="bb bb__error">
+      <div class="bb bb__error" role="alert">
         <div class="bb__error-icon">
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <circle cx="12" cy="12" r="10"></circle>
@@ -1754,9 +1619,14 @@
   }
 
   // Initialize when DOM is ready
-  document.addEventListener('DOMContentLoaded', () => {
+  function start(){
     document.querySelectorAll('[id^="bundle-builder-"]').forEach(init);
-  });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
 
   // Re-initialize when the section is reloaded in the Theme Editor
   document.addEventListener('shopify:section:load', (event) => {
@@ -1792,7 +1662,6 @@
   const heroAttrObserver = { observe: function(){}, disconnect: function(){} };
 
   // No attribute observing needed
-
   // Global error handler
   window.addEventListener('error', function(e) {
     try {

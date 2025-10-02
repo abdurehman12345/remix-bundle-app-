@@ -99,6 +99,7 @@ export const loader = async ({ request }) => {
     // Read plan for the requesting shop if provided
     let plan = 'FREE';
     let hero = null;
+    let carousel = null;
     try {
       const url = new URL(request.url);
       const shop = url.searchParams.get('shop') || null;
@@ -115,6 +116,22 @@ export const loader = async ({ request }) => {
             colorEnd: s.heroColorEnd || '#8b5cf6',
           };
         }
+        // Load carousel settings from languageJson.carousel if present
+        try {
+          const payload = s?.languageJson ? JSON.parse(s.languageJson) : null;
+          const c = payload && payload.carousel ? payload.carousel : null;
+          if (c) {
+            carousel = {
+              style: c.style || 'slide',
+              cardStyle: c.cardStyle || 'minimal',
+              autoplay: Boolean(c.autoplay),
+              speedMs: Number(c.speedMs || 3500),
+              buttonBg: (typeof c.buttonBg === 'string' ? c.buttonBg : null),
+              badgeBg: (typeof c.badgeBg === 'string' ? c.badgeBg : null),
+              containerBg: (typeof c.containerBg === 'string' ? c.containerBg : null)
+            };
+          }
+        } catch(_) {}
       }
     } catch(_) {}
 
@@ -122,6 +139,7 @@ export const loader = async ({ request }) => {
     return json({ 
       plan,
       hero,
+      carousel,
       bundles: bundles.map(bundle => ({
         ...bundle,
         imageUrl: toAbsoluteImageUrl(bundle.imageUrl, appBaseUrl),

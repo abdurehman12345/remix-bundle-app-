@@ -1,15 +1,1050 @@
-/* Swiper coverflow sizing */
-.bb__swiper {
-  padding: 2rem 0 4.5rem; /* extra space for pagination below */
+/* Removed duplicate initial Swiper sizing; consolidated at bottom */
+
+/* Enhanced Bundle Cards - Modern 3D Design System */
+@import url('./enhanced-bundle-cards.css');
+
+/* ===== Enhanced Loading Screen with 3D Bundles Animation ===== */
+.bb__loading.bb__loading--3d {
+  position: relative;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  min-height: 400px;
   display: flex;
-  flex-direction: column;
-  align-items: center; /* center the track horizontally */
-  margin: 0 auto; /* ensure container itself is centered */
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
 }
 
-.bb__swiper .swiper-slide {
-  width: 340px;
-  max-width: 90vw;
+.bb__loading.bb__loading--3d::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+  animation: shimmerBackground 4s ease-in-out infinite;
+}
+
+@keyframes shimmerBackground {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.bb__loading-container {
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.bb__loading-spinner--3d {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 2rem;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.bb__spinner-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  background: linear-gradient(45deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3)) border-box;
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+  box-shadow: 
+    inset 0 0 30px rgba(99,102,241,0.2),
+    0 0 40px rgba(99,102,241,0.1);
+}
+
+.bb__spinner-ring--outer { 
+  animation: ring-spin-3d 2.5s linear infinite;
+  transform: rotateX(15deg) rotateY(15deg);
+}
+
+.bb__spinner-ring--middle { 
+  transform: scale(0.75) rotateX(-10deg) rotateY(-10deg); 
+  animation: ring-spin-rev-3d 2s linear infinite;
+  border-width: 4px;
+}
+
+.bb__spinner-ring--inner { 
+  transform: scale(0.5) rotateX(20deg) rotateY(20deg); 
+  animation: ring-spin-3d 1.5s linear infinite;
+  border-width: 5px;
+}
+
+.bb__spinner-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #6366f1, #8b5cf6, #06b6d4);
+  box-shadow: 
+    0 0 0 12px rgba(99,102,241,0.1), 
+    0 0 30px rgba(99,102,241,0.6),
+    0 0 60px rgba(139,92,246,0.4);
+  animation: core-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ring-spin-3d {
+  0% { transform: rotateX(15deg) rotateY(15deg) rotateZ(0deg); }
+  100% { transform: rotateX(15deg) rotateY(15deg) rotateZ(360deg); }
+}
+
+@keyframes ring-spin-rev-3d {
+  0% { transform: scale(0.75) rotateX(-10deg) rotateY(-10deg) rotateZ(0deg); }
+  100% { transform: scale(0.75) rotateX(-10deg) rotateY(-10deg) rotateZ(-360deg); }
+}
+
+@keyframes core-pulse {
+  0%, 100% { 
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow: 
+      0 0 0 12px rgba(99,102,241,0.1), 
+      0 0 30px rgba(99,102,241,0.6),
+      0 0 60px rgba(139,92,246,0.4);
+  }
+  50% { 
+    transform: translate(-50%, -50%) scale(1.2);
+    box-shadow: 
+      0 0 0 20px rgba(99,102,241,0.2), 
+      0 0 40px rgba(99,102,241,0.8),
+      0 0 80px rgba(139,92,246,0.6);
+  }
+}
+
+.bb__loading-content h3 { 
+  margin: 0 0 1rem; 
+  font-weight: 700; 
+  font-size: 1.5rem;
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.bb__loading-content p { 
+  margin: 0 0 2rem; 
+  color: rgba(255, 255, 255, 0.8); 
+  font-size: 1.1rem;
+}
+
+.bb__loading-progress { 
+  position: relative; 
+  padding-top: 1.5rem; 
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+/* Enhanced gradient progress bar with glassmorphism */
+.bb__progress-bar { 
+  position: relative; 
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 50px;
+  height: 8px;
+  overflow: hidden;
+  box-shadow: 
+    inset 0 2px 10px rgba(0, 0, 0, 0.2),
+    0 2px 20px rgba(99, 102, 241, 0.2);
+}
+
+.bb__progress-fill--3d {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #06b6d4, #10b981);
+  background-size: 300% 100%;
+  animation: progress-marquee-3d 2s ease-in-out infinite;
+  border-radius: 50px;
+  box-shadow: 
+    0 0 20px rgba(99,102,241,0.6),
+    0 0 40px rgba(139,92,246,0.4);
+}
+
+@keyframes progress-marquee-3d {
+  0% { 
+    left: -40%; 
+    background-position: 0% 50%; 
+    box-shadow: 0 0 20px rgba(99,102,241,0.6);
+  }
+  50% { 
+    left: 50%; 
+    background-position: 100% 50%; 
+    box-shadow: 0 0 30px rgba(139,92,246,0.8);
+  }
+  100% { 
+    left: 110%; 
+    background-position: 200% 50%; 
+    box-shadow: 0 0 20px rgba(6,182,212,0.6);
+  }
+}
+
+.bb__progress-text { 
+  display: inline-block; 
+  margin-top: 1rem; 
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+/* ===== Enhanced Cube Mode with Glassmorphism Pagination ===== */
+.bb--cube-modern .bb__swiper {
+  width: 100%;
+  max-width: 640px;
+  height: 500px !important;
+  margin: 0 auto;
+  perspective: 1400px;
+  perspective-origin: center center;
+  overflow: visible;
+}
+
+.bb--cube-modern .swiper-wrapper {
+  transform-style: preserve-3d;
+  height: 100%;
+}
+
+.bb--cube-modern .swiper-slide {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.4s ease;
+}
+
+.bb--cube-modern .bb__bundle-card {
+  aspect-ratio: 1/1;
+  width: 85%;
+  height: auto;
+  max-width: 90%;
+  margin: auto;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  box-shadow: 
+    0 20px 40px rgba(0,0,0,0.3), 
+    0 0 30px rgba(99,102,241,0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  color: #fff;
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.6s ease;
+}
+
+.bb--cube-modern .swiper-slide-active .bb__bundle-card {
+  transform: scale(1.08) translateZ(20px);
+  box-shadow: 
+    0 30px 60px rgba(0,0,0,0.4), 
+    0 0 50px rgba(139,92,246,0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Enhanced glassmorphism pagination for cube */
+.bb--cube-modern .swiper-pagination {
+  position: absolute !important;
+  bottom: 20px !important; /* positioned inside container with safe margin */
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border-radius: 50px;
+  padding: 12px 20px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  z-index: 20 !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.bb--cube-modern .swiper-pagination-bullet {
+  background: rgba(255, 255, 255, 0.4);
+  opacity: 1;
+  width: 12px;
+  height: 12px;
+  margin: 0 6px;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bb--cube-modern .swiper-pagination-bullet-active {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  transform: scale(1.4);
+  box-shadow: 
+    0 0 0 4px rgba(139, 92, 246, 0.3),
+    0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+/* ===== Enhanced Coverflow with Depth Blur and Active Glow ===== */
+.bb--coverflow .bb__swiper {
+  height: auto;
+  overflow: visible;
+  padding: 40px 0 60px;
+}
+
+.bb--coverflow .swiper-slide {
+  width: 320px;
+  height: auto;
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform-style: preserve-3d;
+}
+
+.bb--coverflow .swiper-slide:not(.swiper-slide-active) {
+  filter: blur(2px) brightness(0.7);
+  opacity: 0.6;
+}
+
+.bb--coverflow .swiper-slide-active {
+  filter: blur(0) brightness(1);
+  opacity: 1;
+  transform: scale(1.1) rotateY(0deg) translateZ(50px);
+  z-index: 10;
+}
+
+.bb--coverflow .swiper-slide-active .bb__bundle-card {
+  box-shadow: 
+    0 25px 50px rgba(99, 102, 241, 0.4),
+    0 0 60px rgba(139, 92, 246, 0.3),
+    0 0 100px rgba(99, 102, 241, 0.2);
+  transform: rotateX(-5deg);
+  border: 2px solid rgba(99, 102, 241, 0.3);
+}
+
+.bb--coverflow .swiper-slide-prev,
+.bb--coverflow .swiper-slide-next {
+  filter: blur(1px) brightness(0.85);
+  opacity: 0.8;
+}
+
+/* ===== Enhanced Centerpop with Advanced Springy Animation ===== */
+.bb--motion .bb__swiper {
+  height: auto;
+  perspective: 1400px;
+  overflow: visible;
+  padding: 40px 0 60px;
+  transform-style: preserve-3d;
+}
+
+.bb--motion .swiper-slide { 
+  transition: 
+    transform 600ms cubic-bezier(0.175, 0.885, 0.32, 1.4),
+    opacity 450ms ease,
+    filter 450ms ease,
+    box-shadow 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform: scale(0.82) translateY(25px) translateZ(-100px) rotateX(8deg);
+  opacity: 0.5; 
+  filter: blur(2px) brightness(0.8);
+  z-index: 0;
+  transform-style: preserve-3d;
+}
+
+.bb--motion .swiper-slide.swiper-slide-active { 
+  transform: scale(1.15) translateY(-15px) translateZ(20px) rotateX(0deg); 
+  opacity: 1;
+  filter: blur(0) brightness(1);
+  z-index: 5; 
+  animation: enhancedSpringBounce 1s cubic-bezier(0.175, 0.885, 0.32, 1.4);
+}
+
+@keyframes enhancedSpringBounce {
+  0% { 
+    transform: scale(0.82) translateY(25px) translateZ(-100px) rotateX(8deg);
+    filter: blur(2px) brightness(0.8);
+  }
+  45% { 
+    transform: scale(1.18) translateY(-20px) translateZ(30px) rotateX(-2deg);
+    filter: blur(0) brightness(1.05);
+  }
+  70% { 
+    transform: scale(1.12) translateY(-12px) translateZ(15px) rotateX(1deg);
+    filter: blur(0) brightness(1.02);
+  }
+  100% { 
+    transform: scale(1.15) translateY(-15px) translateZ(20px) rotateX(0deg);
+    filter: blur(0) brightness(1);
+  }
+}
+
+.bb--motion .swiper-slide.swiper-slide-next,
+.bb--motion .swiper-slide.swiper-slide-prev {
+  transform: scale(0.90) translateY(15px) translateZ(-50px) rotateX(5deg);
+  opacity: 0.75;
+  filter: blur(1px) brightness(0.9);
+  z-index: 2;
+}
+
+.bb--motion .bb__bundle-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  overflow: hidden;
+  transition: inherit;
+  position: relative;
+}
+
+.bb--motion .bb__bundle-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  border-radius: 24px;
+}
+
+.bb--motion .swiper-slide-active .bb__bundle-card {
+  box-shadow: 
+    0 35px 70px rgba(0, 0, 0, 0.35),
+    0 15px 35px rgba(99, 102, 241, 0.4),
+    0 0 60px rgba(139, 92, 246, 0.3);
+  border-color: rgba(99, 102, 241, 0.4);
+  backdrop-filter: blur(28px) saturate(220%);
+}
+
+.bb--motion .swiper-slide-active .bb__bundle-card::before {
+  opacity: 1;
+}
+
+/* Enhanced Glowing pagination dots for centerpop */
+.bb--motion .swiper-pagination {
+  position: static;
+  margin-top: 2.5rem;
+  padding: 18px 24px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 60px;
+  display: inline-flex;
+  justify-content: center;
+  align-self: center;
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.25),
+    0 4px 16px rgba(99, 102, 241, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform-style: preserve-3d;
+}
+
+.bb--motion .swiper-pagination-bullet {
+  width: 16px;
+  height: 16px;
+  background: rgba(99, 102, 241, 0.25);
+  opacity: 1;
+  margin: 0 10px;
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform: scale(1) translateZ(0);
+  border: 2px solid rgba(99, 102, 241, 0.4);
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+}
+
+.bb--motion .swiper-pagination-bullet::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.6), transparent);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  border-radius: 50%;
+  transform: translateZ(-1px);
+}
+
+.bb--motion .swiper-pagination-bullet::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  background: linear-gradient(135deg, #fff, rgba(255, 255, 255, 0.8));
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0) translateZ(2px);
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.bb--motion .swiper-pagination-bullet:hover {
+  transform: scale(1.2) translateZ(5px);
+  border-color: rgba(99, 102, 241, 0.6);
+}
+
+.bb--motion .swiper-pagination-bullet:hover::before {
+  opacity: 0.5;
+}
+
+.bb--motion .swiper-pagination-bullet-active {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+  transform: scale(1.8) translateZ(10px);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 
+    0 0 0 8px rgba(99, 102, 241, 0.2),
+    0 0 25px rgba(99, 102, 241, 0.7),
+    0 0 50px rgba(139, 92, 246, 0.4);
+  animation: enhancedGlowPulse 2.5s ease-in-out infinite;
+}
+
+.bb--motion .swiper-pagination-bullet-active::before {
+  opacity: 1;
+}
+
+.bb--motion .swiper-pagination-bullet-active::after {
+  transform: translate(-50%, -50%) scale(1) translateZ(2px);
+}
+
+@keyframes enhancedGlowPulse {
+  0%, 100% { 
+    box-shadow: 
+      0 0 0 8px rgba(99, 102, 241, 0.2),
+      0 0 25px rgba(99, 102, 241, 0.7),
+      0 0 50px rgba(139, 92, 246, 0.4);
+    filter: brightness(1);
+  }
+  50% { 
+    box-shadow: 
+      0 0 0 12px rgba(99, 102, 241, 0.3),
+      0 0 35px rgba(99, 102, 241, 0.9),
+      0 0 70px rgba(139, 92, 246, 0.6);
+    filter: brightness(1.2);
+  }
+}
+
+/* ===== Enhanced Classic with Progress Bar Pagination ===== */
+.bb--classic .bb__swiper {
+  height: auto;
+  perspective: none;
+  padding: 20px 0 40px;
+}
+
+.bb--classic .swiper-slide {
+  width: 300px;
+  height: auto;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bb--classic .swiper-slide:not(.swiper-slide-active) {
+  opacity: 0.7;
+  transform: scale(0.95);
+}
+
+.bb--classic .swiper-slide-active {
+  opacity: 1;
+  transform: scale(1.02);
+}
+
+.bb--classic .bb__bundle-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bb--classic .swiper-slide-active .bb__bundle-card {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+/* Progress bar style pagination for classic */
+.bb--classic .swiper-pagination {
+  position: static;
+  margin-top: 1.5rem;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.bb--classic .swiper-pagination::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  border-radius: 2px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+}
+
+/* ===== Enhanced Flip with Advanced Card Shadows and Parallax ===== */
+.bb--flip .bb__swiper {
+  perspective: 1600px;
+  perspective-origin: center center;
+  height: 520px;
+  overflow: visible;
+  transform-style: preserve-3d;
+}
+
+.bb--flip .swiper-wrapper {
+  transform-style: preserve-3d;
+  height: 100%;
+}
+
+.bb--flip .swiper-slide {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  border-radius: 24px;
+  overflow: hidden;
+  transition: all 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+}
+
+.bb--flip .bb__bundle-card {
+  border-radius: 24px;
+  transform-style: preserve-3d;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.18),
+    0 10px 25px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  position: relative;
+  overflow: hidden;
+  transition: inherit;
+}
+
+.bb--flip .bb__bundle-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 120%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.6) 30%, 
+    rgba(99, 102, 241, 0.1) 50%,
+    rgba(255, 255, 255, 0.6) 70%,
+    transparent);
+  transition: left 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: 2;
+  transform: skewX(-15deg);
+}
+
+.bb--flip .bb__bundle-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.9s ease;
+  pointer-events: none;
+}
+
+.bb--flip .swiper-slide-active .bb__bundle-card::before {
+  left: 120%;
+}
+
+.bb--flip .swiper-slide-active .bb__bundle-card::after {
+  opacity: 1;
+}
+
+.bb--flip .swiper-slide-active .bb__bundle-card {
+  box-shadow: 
+    0 40px 80px rgba(0, 0, 0, 0.25),
+    0 20px 40px rgba(99, 102, 241, 0.2),
+    0 0 60px rgba(139, 92, 246, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform: translateZ(40px) rotateY(0deg);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+/* Enhanced parallax effect for flip background elements */
+.bb--flip .bb__bundle-image {
+  transition: transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform-style: preserve-3d;
+  position: relative;
+  overflow: hidden;
+}
+
+.bb--flip .bb__bundle-image::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.9s ease;
+  z-index: 1;
+}
+
+.bb--flip .swiper-slide-active .bb__bundle-image {
+  transform: translateZ(15px) scale(1.08) rotateX(2deg);
+}
+
+.bb--flip .swiper-slide-active .bb__bundle-image::before {
+  opacity: 1;
+}
+
+.bb--flip .bb__bundle-info {
+  transform-style: preserve-3d;
+  transition: transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+}
+
+.bb--flip .swiper-slide-active .bb__bundle-info {
+  transform: translateZ(8px);
+}
+
+/* ===== Accessibility Enhancements ===== */
+.bb__swiper[aria-label] {
+  outline: none;
+}
+
+.bb__swiper:focus-within {
+  outline: 2px solid #6366f1;
+  outline-offset: 4px;
+}
+
+.swiper-pagination-bullet {
+  position: relative;
+}
+
+.swiper-pagination-bullet::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.swiper-pagination-bullet:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+.swiper-button-next,
+.swiper-button-prev {
+  position: relative;
+}
+
+.swiper-button-next:focus,
+.swiper-button-prev:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+/* Screen reader only text for better accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .bb--cube-modern .bb__bundle-card,
+  .bb--coverflow .bb__bundle-card,
+  .bb--motion .bb__bundle-card,
+  .bb--classic .bb__bundle-card,
+  .bb--flip .bb__bundle-card {
+    border-width: 2px;
+    border-color: currentColor;
+  }
+  
+  .swiper-pagination-bullet {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Enhanced Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  /* Disable all animations and transitions */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Disable carousel animations */
+  .bb--cube-modern .swiper-slide,
+  .bb--coverflow .swiper-slide,
+  .bb--motion .swiper-slide,
+  .bb--classic .swiper-slide,
+  .bb--flip .swiper-slide {
+    transition-duration: 0.01ms !important;
+    animation: none !important;
+    transform: none !important;
+  }
+  
+  /* Disable loading animations */
+  .bb__loading-spinner--3d,
+  .bb__spinner-ring,
+  .bb__spinner-core {
+    animation: none !important;
+    transform: none !important;
+  }
+  
+  .bb__progress-fill--3d {
+    animation: none !important;
+    left: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* Disable pagination animations */
+  .bb--motion .swiper-pagination-bullet-active {
+    animation: none !important;
+  }
+  
+  /* Disable 3D transforms */
+  .bb__bundle-card {
+    transform-style: flat !important;
+    transform: none !important;
+  }
+  
+  /* Disable hover effects */
+  .bb__bundle-card:hover,
+  .bb--motion .swiper-slide-active .bb__bundle-card,
+  .bb--flip .swiper-slide-active .bb__bundle-card {
+    transform: none !important;
+  }
+}
+
+/* ===== Cube Mode Override (requested) ===== */
+/* (Consolidated into authoritative cube section below) */
+
+/* Reverted de-emphasis rules to previous stable visuals */
+
+/* ===== Modern Cube (scoped) ===== */
+.bb--cube-modern .bb__swiper {
+  width: 100%;
+  max-width: 640px;
+  height: 580px !important; /* increased height to accommodate pagination */
+  margin: 0 auto;
+  perspective: 1400px;
+  perspective-origin: center center;
+  position: relative; /* anchor pagination inside container */
+  overflow: hidden; /* contain pagination */
+}
+
+.bb--cube-modern .swiper-wrapper {
+  transform-style: preserve-3d;
+  height: calc(100% - 60px); /* leave 60px space at bottom for pagination */
+}
+
+.bb--cube-modern .swiper-slide {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  transition: transform 0.8s ease, box-shadow 0.4s ease;
+}
+
+.bb--cube-modern .bb__bundle-card {
+  aspect-ratio: 1/1;
+  width: 80%;
+  height: auto;
+  max-width: 90%;
+  margin: auto;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.35), 0 0 20px rgba(99,102,241,0.4);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  color: #fff;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.bb--cube-modern .swiper-slide-active .bb__bundle-card {
+  transform: scale(1.05);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 30px rgba(139,92,246,0.6);
+}
+
+.bb--cube-modern .bb__bundle-image {
+  flex: 1 1 auto;
+  width: 100%;
+  overflow: hidden;
+}
+.bb--cube-modern .bb__bundle-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.bb--cube-modern .bb__bundle-content {
+  padding: 1rem;
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.bb--cube-modern .swiper-button-next,
+.bb--cube-modern .swiper-button-prev {
+  color: #fff;
+  background: rgba(99,102,241,0.6);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  margin-top: -24px;
+  transition: background 0.3s;
+}
+.bb--cube-modern .swiper-button-next:hover,
+.bb--cube-modern .swiper-button-prev:hover {
+  background: rgba(139,92,246,0.8);
+}
+.bb--cube-modern .swiper-button-next:after,
+.bb--cube-modern .swiper-button-prev:after {
+  font-size: 20px;
+}
+
+/* Removed duplicate cube-modern pagination styles - using enhanced version above */
+
+/* De-emphasize only far-back faces: keep immediate next/prev readable but lighter */
+.bb--cube .swiper-slide:not(.swiper-slide-active):not(.swiper-slide-next):not(.swiper-slide-prev),
+.bb--cube-modern .swiper-slide:not(.swiper-slide-active):not(.swiper-slide-next):not(.swiper-slide-prev) {
+  opacity: 0.35;
+}
+
+@media (max-width: 1024px) {
+  .bb--cube-modern .bb__swiper { height: 420px; }
+  .bb--cube-modern .bb__bundle-card { width: 85%; }
+}
+@media (max-width: 768px) {
+  .bb--cube-modern .bb__swiper { height: 360px; }
+  .bb--cube-modern .bb__bundle-card { width: 90%; }
+  
+  /* Enhanced mobile optimizations for motion carousel */
+  .bb--motion .bb__swiper {
+    padding: 30px 0 50px;
+    perspective: 800px;
+  }
+  
+  .bb--motion .swiper-slide {
+    transform: scale(0.88) translateY(15px) translateZ(-60px) rotateX(4deg);
+  }
+  
+  .bb--motion .swiper-slide.swiper-slide-active {
+    transform: scale(1.08) translateY(-8px) translateZ(15px) rotateX(0deg);
+  }
+  
+  .bb--motion .swiper-pagination {
+    margin-top: 2rem;
+    padding: 14px 20px;
+  }
+  
+  .bb--motion .swiper-pagination-bullet {
+    width: 14px;
+    height: 14px;
+    margin: 0 8px;
+  }
+  
+  /* Enhanced mobile optimizations for flip carousel */
+  .bb--flip .bb__swiper {
+    height: 460px;
+    perspective: 1200px;
+  }
+  
+  .bb--flip .bb__bundle-card::before {
+    width: 100%;
+    left: -100%;
+  }
+  
+  .bb--flip .swiper-slide-active .bb__bundle-card::before {
+    left: 100%;
+  }
+}
+
+/* Enhanced Cube mode: (removed conflicting interim rules) */
+
+/* Enhanced Flip mode */
+.bb--flip .bb__swiper {
+  perspective: 1200px;
+  perspective-origin: center center;
+}
+
+.bb--flip .bb__swiper .swiper-wrapper {
+  transform-style: preserve-3d;
+}
+
+.bb--flip .bb__swiper .swiper-slide {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.bb--flip .bb__bundle-card {
+  border-radius: 16px;
+  transform-style: preserve-3d;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+/* Pruned earlier motion block (using consolidated centerpop rules) */
+
+/* Pruned earlier loop block (using consolidated flat slider rules) */
+
+/* Custom motion style - emphasize active slide */
+.bb--motion .bb__swiper .swiper-slide {
+  transition: transform 400ms ease, box-shadow 400ms ease, opacity 400ms ease;
+  transform: translateZ(0) scale(0.9);
+  opacity: 0.85;
+}
+
+.bb--motion .bb__swiper .swiper-slide.swiper-slide-active {
+  transform: translateZ(0) scale(1.06);
+  opacity: 1;
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.15);
 }
 
 /* Force tighter slide spacing on Free plan only */
@@ -33,9 +1068,7 @@
 /* Ensure buttons are not clipped inside cards on PRO */
 .bb--pro .bb .bb__bundle-card { overflow: visible; }
 
-@media (max-width: 768px) {
-  .bb__swiper .swiper-slide { width: 280px; }
-}
+/* Removed older mobile widths to avoid conflicts; handled in new section */
 
 .swiper-slide .bb__bundle-card {
   height: 480px;
@@ -47,10 +1080,61 @@
   box-shadow: var(--bb-shadow-md);
 }
 
+/* Enhanced active slide for special modes */
+.bb--cube .bb__swiper .swiper-slide-active .bb__bundle-card,
+.bb--flip .bb__swiper .swiper-slide-active .bb__bundle-card {
+  transform: scale(1.02);
+  box-shadow: 
+    0 25px 50px rgba(99, 102, 241, 0.2),
+    0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.bb--loop .bb__swiper .swiper-slide-active .bb__bundle-card {
+  transform: scale(1.03) translateZ(10px);
+  box-shadow: 
+    0 20px 40px rgba(99, 102, 241, 0.15),
+    0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
 /* Place Swiper pagination below the carousel, not overlapping cards */
 .bb__swiper .swiper-pagination {
   position: static;
   margin-top: 1rem;
+}
+
+/* Enhanced pagination for special modes (exclude cube; cube uses absolute in-container) */
+.bb--flip .bb__swiper .swiper-pagination,
+.bb--motion .bb__swiper .swiper-pagination,
+.bb--loop .bb__swiper .swiper-pagination {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 50px;
+  display: inline-flex;
+  justify-content: center;
+  align-self: center;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.bb--flip .bb__swiper .swiper-pagination-bullet,
+.bb--motion .bb__swiper .swiper-pagination-bullet,
+.bb--loop .bb__swiper .swiper-pagination-bullet {
+  width: 12px;
+  height: 12px;
+  background: rgba(99, 102, 241, 0.3);
+  opacity: 1;
+  margin: 0 6px;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform: scale(1);
+}
+
+.bb--flip .bb__swiper .swiper-pagination-bullet-active,
+.bb--motion .bb__swiper .swiper-pagination-bullet-active,
+.bb--loop .bb__swiper .swiper-pagination-bullet-active {
+  background: var(--bb-primary);
+  transform: scale(1.3);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
 }
 
 /* Keep nav arrows above slides */
@@ -60,12 +1144,66 @@
   display: none !important; /* hide left/right arrows */
 }
 
+/* Enhanced navigation for special modes */
+.bb--cube .bb__swiper .swiper-button-prev,
+.bb--cube .bb__swiper .swiper-button-next,
+.bb--flip .bb__swiper .swiper-button-prev,
+.bb--flip .bb__swiper .swiper-button-next,
+.bb--motion .bb__swiper .swiper-button-prev,
+.bb--motion .bb__swiper .swiper-button-next,
+.bb--loop .bb__swiper .swiper-button-prev,
+.bb--loop .bb__swiper .swiper-button-next {
+  display: flex !important;
+  width: 50px;
+  height: 50px;
+  margin-top: -25px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 50%;
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+  color: var(--bb-primary);
+  font-size: 18px;
+  font-weight: bold;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.bb--cube .bb__swiper .swiper-button-prev:hover,
+.bb--cube .bb__swiper .swiper-button-next:hover,
+.bb--flip .bb__swiper .swiper-button-prev:hover,
+.bb--flip .bb__swiper .swiper-button-next:hover,
+.bb--motion .bb__swiper .swiper-button-prev:hover,
+.bb--motion .bb__swiper .swiper-button-next:hover,
+.bb--loop .bb__swiper .swiper-button-prev:hover,
+.bb--loop .bb__swiper .swiper-button-next:hover {
+  background: var(--bb-primary);
+  color: white;
+  transform: scale(1.1) translateZ(10px);
+  box-shadow: 
+    0 15px 35px rgba(99, 102, 241, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+.bb--cube .bb__swiper .swiper-button-prev::after,
+.bb--cube .bb__swiper .swiper-button-next::after,
+.bb--flip .bb__swiper .swiper-button-prev::after,
+.bb--flip .bb__swiper .swiper-button-next::after,
+.bb--motion .bb__swiper .swiper-button-prev::after,
+.bb--motion .bb__swiper .swiper-button-next::after,
+.bb--loop .bb__swiper .swiper-button-prev::after,
+.bb--loop .bb__swiper .swiper-button-next::after {
+  font-size: 18px;
+  font-weight: bold;
+}
+
 /* Swiper coverflow sometimes injects shadow elements; force-hide them */
 .bb__swiper .swiper-slide-shadow-left,
 .bb__swiper .swiper-slide-shadow-right {
   display: none !important;
   opacity: 0 !important;
 }
+
 /* Bundle Builder - Modern 3D UI Styles */
 :root {
   --bb-primary: #6366f1;
@@ -504,28 +1642,287 @@
   transform: scale(1) translateZ(5px);
 }
 
-/* Enhanced 3D Bundle Cards */
+/* ===== ENHANCED BUNDLE CARD STYLE SYSTEM =====
+   Modern 3D effects with consistent visual hierarchy
+   Maintains existing class logic and backend compatibility
+   ================================================== */
+
+/* ===== CSS CUSTOM PROPERTIES ===== */
+:root {
+  --bb-card-radius: 24px;
+  --bb-card-radius-lg: 28px;
+  --bb-card-shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --bb-card-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --bb-card-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
+  --bb-card-shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.15);
+  --bb-card-transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --bb-card-transition-fast: all 0.2s ease;
+  --bb-card-hover-lift: -12px;
+  --bb-card-hover-scale: 1.03;
+  --bb-card-hover-rotate: 3deg;
+  --bb-primary-glow: rgba(99, 102, 241, 0.3);
+  --bb-secondary-glow: rgba(139, 92, 246, 0.25);
+}
+
+/* ===== BASE BUNDLE CARD ===== */
 .bb__bundle-card {
+  /* Layout & Structure */
   background: var(--bb-white);
-  border-radius: 28px;
-  box-shadow: var(--bb-shadow-md);
-  /* remove inner highlight that could look like an edge shadow */
+  border-radius: var(--bb-card-radius);
   overflow: hidden;
-  transition: var(--bb-transition-slow);
-  border: none;
   display: flex;
   flex-direction: column;
-  min-width: 320px;
+  position: relative;
+  min-width: 300px;
   max-width: 400px;
   height: auto;
   flex: 0 0 auto;
   scroll-snap-align: center;
-  position: relative;
-  transform: translateY(0) scale(1) rotateY(0deg) translateZ(0);
+  
+  /* 3D Transform Setup */
   transform-style: preserve-3d;
   transform-origin: center center;
+  transform: translateY(0) scale(1) rotateY(0deg) translateZ(0);
+  
+  /* Enhanced Shadows & Transitions */
+  box-shadow: var(--bb-card-shadow-md);
+  transition: var(--bb-card-transition);
+  border: none;
+  
+  /* Subtle gradient overlay for depth */
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
 }
 
+/* Enhanced Hover State */
+.bb__bundle-card:hover {
+  transform: translateY(var(--bb-card-hover-lift)) scale(var(--bb-card-hover-scale)) rotateY(var(--bb-card-hover-rotate)) translateZ(20px);
+  box-shadow: var(--bb-card-shadow-xl);
+}
+
+/* ===== CARD STYLE VARIANTS ===== */
+
+/* Modern Glassmorphism */
+.bb--card-modern .bb__bundle-card,
+.bb--card-glass .bb__bundle-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.bb--card-modern .bb__bundle-card:hover,
+.bb--card-glass .bb__bundle-card:hover {
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.4),
+    0 0 40px var(--bb-primary-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.bb--card-modern .bb__bundle-title,
+.bb--card-glass .bb__bundle-title {
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.bb--card-modern .bb__bundle-desc,
+.bb--card-glass .bb__bundle-desc {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Premium Gradient */
+.bb--card-premium-gradient .bb__bundle-card,
+.bb--card-premium .bb__bundle-card {
+  background: linear-gradient(160deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 
+    0 20px 50px rgba(99, 102, 241, 0.35),
+    0 8px 24px rgba(139, 92, 246, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.bb--card-premium-gradient .bb__bundle-card::before,
+.bb--card-premium .bb__bundle-card::before {
+  background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  opacity: 1;
+}
+
+.bb--card-premium-gradient .bb__bundle-card:hover,
+.bb--card-premium .bb__bundle-card:hover {
+  box-shadow: 
+    0 30px 70px rgba(99, 102, 241, 0.5),
+    0 12px 36px rgba(139, 92, 246, 0.3),
+    0 0 60px rgba(6, 182, 212, 0.2);
+}
+
+.bb--card-premium-gradient .bb__bundle-title,
+.bb--card-premium .bb__bundle-title {
+  color: #fff;
+  font-weight: 800;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.bb--card-premium-gradient .bb__bundle-desc,
+.bb--card-premium .bb__bundle-desc {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Minimal Clean */
+.bb--card-minimal .bb__bundle-card {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: var(--bb-card-shadow-sm);
+  border-radius: 20px;
+  transition: var(--bb-card-transition);
+}
+
+.bb--card-minimal .bb__bundle-card:hover {
+  border-color: rgba(99, 102, 241, 0.25);
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(99, 102, 241, 0.1);
+  transform: translateY(-8px) scale(1.02) translateZ(10px);
+}
+
+/* Neumorphism */
+.bb--card-neumorph .bb__bundle-card {
+  background: #f3f4f6;
+  border: none;
+  border-radius: var(--bb-card-radius-lg);
+  box-shadow: 
+    12px 12px 24px #d1d5db,
+    -12px -12px 24px #ffffff,
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: var(--bb-card-transition);
+}
+
+.bb--card-neumorph .bb__bundle-card:hover {
+  box-shadow: 
+    inset 8px 8px 16px #d1d5db,
+    inset -8px -8px 16px #ffffff,
+    0 4px 16px rgba(99, 102, 241, 0.15);
+  transform: translateY(-4px) scale(1.01) translateZ(5px);
+}
+
+.bb--card-neumorph .bb__bundle-title {
+  color: #374151;
+  font-weight: 700;
+}
+
+.bb--card-neumorph .bb__bundle-desc {
+  color: #6b7280;
+}
+
+/* Outline/Bordered */
+.bb--card-outline .bb__bundle-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 2px dashed rgba(99, 102, 241, 0.4);
+  box-shadow: none;
+  transition: var(--bb-card-transition);
+}
+
+.bb--card-outline .bb__bundle-card:hover {
+  border-style: solid;
+  border-color: rgba(99, 102, 241, 0.8);
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 
+    0 12px 32px rgba(99, 102, 241, 0.15),
+    0 0 0 4px rgba(99, 102, 241, 0.1);
+  transform: translateY(-8px) scale(1.02) translateZ(15px);
+}
+
+/* Image Dominant */
+.bb--card-image-dominant .bb__bundle-card {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: var(--bb-card-shadow-md);
+  overflow: hidden;
+}
+
+.bb--card-image-dominant .bb__bundle-image {
+  height: 280px; /* Larger image area */
+  position: relative;
+}
+
+.bb--card-image-dominant .bb__bundle-image::after {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, transparent 70%);
+  height: 100%;
+}
+
+.bb--card-image-dominant .bb__bundle-info {
+  padding: 1.5rem;
+  min-height: 140px;
+}
+
+.bb--card-image-dominant .bb__bundle-card:hover {
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.15),
+    0 8px 24px rgba(99, 102, 241, 0.1);
+}
+
+/* Depth/Layered */
+.bb--card-depth .bb__bundle-card {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 
+    0 8px 16px rgba(0, 0, 0, 0.06),
+    0 16px 32px rgba(0, 0, 0, 0.08),
+    0 32px 64px rgba(0, 0, 0, 0.06);
+  transform: translateZ(20px);
+  position: relative;
+}
+
+.bb--card-depth .bb__bundle-card:hover {
+  transform: scale(1.05) translateZ(40px) rotateY(2deg);
+  box-shadow: 
+    0 16px 32px rgba(0, 0, 0, 0.12),
+    0 32px 64px rgba(0, 0, 0, 0.1),
+    0 40px 80px rgba(99, 102, 241, 0.15);
+}
+
+/* Flip Effect */
+.bb--card-flip .bb__bundle-card {
+  transform-style: preserve-3d;
+  background: linear-gradient(145deg, #fff 0%, #f9fafb 100%);
+  border: 1px solid rgba(99, 102, 241, 0.1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--bb-card-shadow-md);
+}
+
+.bb--card-flip .bb__bundle-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  transition: left 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: 2;
+}
+
+.bb--card-flip .bb__bundle-card:hover::before {
+  left: 100%;
+}
+
+.bb--card-flip .bb__bundle-card:hover {
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(99, 102, 241, 0.15);
+  transform: translateY(-10px) scale(1.02) rotateY(2deg) translateZ(25px);
+}
+
+/* Glow Effects */
 .bb__bundle-card::before {
   content: '';
   position: absolute;
@@ -533,12 +1930,12 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, transparent 50%);
+  background: linear-gradient(135deg, var(--bb-primary-glow) 0%, transparent 60%);
   opacity: 0;
-  transition: var(--bb-transition);
+  transition: var(--bb-card-transition);
   pointer-events: none;
   z-index: 1;
-  border-radius: 28px;
+  border-radius: var(--bb-card-radius);
 }
 
 .bb__bundle-card::after {
@@ -548,35 +1945,66 @@
   left: -2px;
   right: -2px;
   bottom: -2px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
-  border-radius: 30px;
+  background: linear-gradient(135deg, var(--bb-primary-glow), var(--bb-secondary-glow));
+  border-radius: calc(var(--bb-card-radius) + 2px);
   opacity: 0;
-  transition: var(--bb-transition);
+  transition: var(--bb-card-transition);
   z-index: -1;
 }
 
-.bb__bundle-card:hover {
-  transform: translateY(-20px) scale(1.05) rotateY(5deg) translateZ(50px);
-  box-shadow: var(--bb-shadow-lg);
-}
-
 .bb__bundle-card:hover::before {
-  opacity: 1;
+  opacity: 0.6;
 }
 
 .bb__bundle-card:hover::after {
-  opacity: 1;
+  opacity: 0.8;
+}
+
+/* ===== ACTIVE/CENTER STATES ===== */
+
+/* Swiper Active States */
+.swiper-slide-active .bb__bundle-card {
+  transform: scale(1.04) translateZ(10px);
+  box-shadow: var(--bb-card-shadow-lg);
+}
+
+.bb--card-modern .swiper-slide-active .bb__bundle-card,
+.bb--card-glass .swiper-slide-active .bb__bundle-card {
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.4),
+    0 0 40px var(--bb-primary-glow);
+}
+
+.bb--card-premium-gradient .swiper-slide-active .bb__bundle-card,
+.bb--card-premium .swiper-slide-active .bb__bundle-card {
+  box-shadow: 
+    0 25px 60px rgba(99, 102, 241, 0.4),
+    0 10px 30px rgba(139, 92, 246, 0.3);
+}
+
+.bb--card-minimal .swiper-slide-active .bb__bundle-card {
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(99, 102, 241, 0.15);
+}
+
+.bb--card-depth .swiper-slide-active .bb__bundle-card {
+  transform: scale(1.06) translateZ(30px);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.15),
+    0 40px 80px rgba(99, 102, 241, 0.2);
 }
 
 /* 3D Center Highlighting */
 .bb__bundle-card.bb__is-center {
-  transform: scale(1.1) translateY(-25px) rotateY(0deg) translateZ(80px);
-  box-shadow: var(--bb-shadow-lg);
+  transform: scale(1.08) translateY(-20px) rotateY(0deg) translateZ(60px);
+  box-shadow: var(--bb-card-shadow-xl);
   z-index: 3;
 }
 
 .bb__bundle-card.bb__is-center::before {
-  opacity: 1;
+  opacity: 0.8;
 }
 
 .bb__bundle-card.bb__is-center::after {
@@ -690,7 +2118,7 @@
 .bb__bundle-products,
 .bb__bundle-wraps,
 .bb__bundle-cards {
-  background: linear-gradient(135deg, var(--bb-primary) 0%, #8b5cf6 100%);
+  background: var(--bb-badge-bg, linear-gradient(135deg, var(--bb-primary) 0%, #8b5cf6 100%));
   color: var(--bb-white);
   padding: 0.5rem 1rem;
   border-radius: 50px;
@@ -717,7 +2145,7 @@
 
 .bb__bundle-select {
   width: 92%;
-  background: linear-gradient(135deg, var(--bb-primary) 0%, #8b5cf6 100%);
+  background: var(--bb-button-bg, linear-gradient(135deg, var(--bb-primary) 0%, #8b5cf6 100%));
   color: var(--bb-white);
   border: none;
   padding: 1.25rem 1.5rem;
@@ -1281,6 +2709,15 @@
   .bb__header-right {
     justify-self: center;
   }
+  
+  /* Tablet optimizations for special modes */
+  .bb--cube .bb__swiper .swiper-slide,
+  .bb--flip .bb__swiper .swiper-slide,
+  .bb--motion .bb__swiper .swiper-slide,
+  .bb--loop .bb__swiper .swiper-slide {
+    width: 70vw;
+    max-width: 400px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1315,6 +2752,18 @@
   
   .bb__nav {
     display: none; /* swipe on mobile */
+  }
+  
+  /* Mobile specific for special modes */
+  .bb--cube .bb__swiper .swiper-button-prev,
+  .bb--cube .bb__swiper .swiper-button-next,
+  .bb--flip .bb__swiper .swiper-button-prev,
+  .bb--flip .bb__swiper .swiper-button-next,
+  .bb--motion .bb__swiper .swiper-button-prev,
+  .bb--motion .bb__swiper .swiper-button-next,
+  .bb--loop .bb__swiper .swiper-button-prev,
+  .bb--loop .bb__swiper .swiper-button-next {
+    display: none !important;
   }
   
   .bb__products,
@@ -1385,6 +2834,15 @@
   .bb__summary {
     padding: 1rem;
   }
+  
+  /* Small mobile optimizations for special modes */
+  .bb--cube .bb__swiper .swiper-slide,
+  .bb--flip .bb__swiper .swiper-slide,
+  .bb--motion .bb__swiper .swiper-slide,
+  .bb--loop .bb__swiper .swiper-slide {
+    width: calc(100vw - 3rem);
+    max-width: 300px;
+  }
 }
 
 /* Focus styles for accessibility */
@@ -1395,7 +2853,6 @@
   outline: none;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
 }
-
 .bb__nav:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
@@ -1443,5 +2900,385 @@
   :root {
     --bb-carousel-rotation: 0deg;
     --bb-carousel-scale: 1;
+  }
+  
+  /* Disable 3D effects in reduced motion */
+  .bb--cube .bb__swiper,
+  .bb--flip .bb__swiper,
+  .bb--motion .bb__swiper,
+  .bb--loop .bb__swiper {
+    perspective: none;
+  }
+  
+  .bb--cube .bb__swiper .swiper-slide,
+  .bb--flip .bb__swiper .swiper-slide,
+  .bb--motion .bb__swiper .swiper-slide,
+  .bb--loop .bb__swiper .swiper-slide {
+    transform: none !important;
+    transform-style: flat !important;
+  }
+}
+/* ==========================================================
+   Base carousel layout (applies to all modes)
+   Keep this minimal; mode-specific rules override below
+   ========================================================== */
+.bb__swiper {
+  height: auto;
+}
+.bb__swiper .swiper-wrapper {
+  align-items: center;
+}
+.bb__swiper .swiper-slide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Ensure the final slide centers in all modes when not looping */
+.bb__swiper .swiper-slide.swiper-slide-active.swiper-slide-last {
+  justify-content: center !important;
+}
+.bb__swiper .swiper-slide.swiper-slide-active.swiper-slide-last > * {
+  margin-left: auto;
+  margin-right: auto;
+}
+/* ==========================================================
+   Mode-specific overrides (scoped to root flags)
+   ========================================================== */
+/* === Mode-Specific Styles === */
+
+/* Coverflow (3D angled multi-cards) */
+.bb--coverflow .bb__swiper { height: auto; max-width: 1100px; margin: 0 auto; overflow: hidden; position: relative; }
+.bb--coverflow .bb__swiper .swiper-slide { width: 280px; height: auto; }
+@media (max-width: 768px) {
+  .bb--coverflow .bb__swiper .swiper-slide { width: 80%; }
+}
+
+/* Classic (flat) and Loop (flat continuous) */
+.bb--classic .bb__swiper,
+.bb--loop .bb__swiper { height: auto; perspective: none; max-width: 1100px; margin: 0 auto; overflow: hidden; position: relative; }
+.bb--classic .bb__swiper .swiper-slide,
+.bb--loop .bb__swiper .swiper-slide { width: 280px; height: auto; }
+@media (max-width: 768px) {
+  .bb--classic .bb__swiper .swiper-slide,
+  .bb--loop .bb__swiper .swiper-slide { width: 80%; }
+}
+
+/* Cube (full-face 3D) */
+.bb--cube .bb__swiper { height: 560px; max-width: 1100px; margin: 0 auto; position: relative; overflow: hidden; padding-bottom: 100px; }
+.bb--cube .bb__swiper .swiper-slide { width: 100%; height: 100%; }
+.bb--cube .bb__bundle-card { width: 90%; height: 90%; margin: auto; }
+/* Hard center each slide face in cube mode to avoid last-slide drift */
+.bb--cube .bb__swiper .swiper-slide {
+  margin-left: auto !important;
+  margin-right: auto !important;
+  justify-content: center !important;
+}
+/* Override PRO spacing rules when cube mode is active */
+.bb--cube.bb--pro .bb .bb__swiper .swiper-slide,
+.bb--cube.bb--pro .bb__swiper .swiper-slide {
+  width: 100% !important;
+  margin-right: 0 !important;
+}
+
+/* Flip (full-face 3D flip) */
+.bb--flip .bb__swiper { height: 450px; }
+.bb--flip .bb__swiper .swiper-slide { width: 100%; height: 100%; }
+.bb--flip .bb__bundle-card { width: 90%; height: 90%; margin: auto; }
+
+/* ------------------------------------------ */
+/* Center Pop Motion (Enhanced Modern Design) */
+/* ------------------------------------------ */
+.bb--motion .bb__swiper {
+  height: auto;
+  perspective: 1000px;
+  overflow: visible;
+}
+
+.bb--motion .bb__swiper .swiper-slide { 
+  transition: 
+    transform 450ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 350ms ease,
+    filter 350ms ease,
+    box-shadow 450ms ease;
+  transform: scale(0.85) translateY(12px) translateZ(-60px);
+  opacity: 0.7; 
+  filter: blur(1px);
+  z-index: 0;
+}
+
+/* Active slide pops forward */
+.bb--motion .bb__swiper .swiper-slide.swiper-slide-active { 
+  transform: scale(1.05) translateY(0) translateZ(0); 
+  opacity: 1;
+  filter: blur(0);
+  z-index: 3; 
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.25);
+  border-radius: 18px;
+}
+
+/* Next/previous slides stay slightly visible */
+.bb--motion .bb__swiper .swiper-slide.swiper-slide-next,
+.bb--motion .bb__swiper .swiper-slide.swiper-slide-prev {
+  transform: scale(0.92) translateY(6px) translateZ(-30px);
+  opacity: 0.85;
+  filter: blur(0.5px);
+  z-index: 2;
+}
+
+/* Bundle card inside slide */
+.bb--motion .bb__bundle-card {
+  width: 85%;
+  height: auto;
+  margin: auto;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: inherit;
+}
+
+@media (max-width: 1024px) {
+  .bb--motion .bb__swiper .swiper-slide { transform: scale(0.9) translateY(10px) translateZ(-40px); }
+  .bb--motion .bb__swiper .swiper-slide.swiper-slide-active { transform: scale(1.04) translateY(0) translateZ(0); }
+  .bb--motion .bb__bundle-card { width: 88%; }
+}
+@media (max-width: 768px) {
+  .bb--motion .bb__swiper .swiper-slide { transform: scale(0.94) translateY(8px) translateZ(-20px); filter: blur(0.5px); }
+  .bb--motion .bb__swiper .swiper-slide.swiper-slide-active { transform: scale(1.02) translateY(0) translateZ(0); }
+  .bb--motion .bb__bundle-card { width: 92%; border-radius: 16px; }
+}
+/* Swiper Carousel Restructure (Base + Mode-specific)
+   - Base layer applies to all carousels
+   - Mode overrides are scoped to root flags to prevent leakage */
+/* Base (shared) */
+.bb__swiper {
+  padding: 2rem 0 3.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 auto;
+  height: auto;
+  touch-action: pan-y;
+}
+.bb__swiper .swiper-wrapper {
+  align-items: center;
+}
+.bb__swiper .swiper-slide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+}
+/* Override base styles for cube mode */
+.bb--cube .bb__swiper {
+  padding: 0;
+  display: block; /* override base flex to let Swiper handle cube transforms */
+  height: 580px !important; /* increased height to accommodate pagination */
+  perspective: 1200px;
+  perspective-origin: center center;
+  overflow: hidden; /* prevent final face from overflowing container */
+  max-width: 1100px; /* slightly larger cube width per request */
+  margin: 0 auto;  /* center the cube carousel */
+  position: relative; /* anchor absolute pagination within container */
+}
+.bb--cube .bb__swiper .swiper-wrapper {
+  transform-style: preserve-3d;
+  height: calc(100% - 60px); /* leave 60px space at bottom for pagination */
+  align-items: stretch; /* avoid vertical mis-centering from base align-items:center */
+  justify-content: center !important; /* hard center the active face on edge cases */
+}
+.bb--cube .bb__swiper .swiper-slide {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 100%;
+  transform-style: preserve-3d;
+  margin: 0 !important; /* prevent right spacing on the last slide */
+}
+.bb--cube .bb__swiper .swiper-slide.swiper-slide-last {
+  margin-right: 0 !important; /* Swiper sometimes injects spacing on last */
+}
+.bb--cube .bb__swiper .swiper-slide.swiper-slide-last > * {
+  margin-left: auto;
+  margin-right: auto;
+}
+.bb--cube .bb__swiper .swiper-slide .bb__bundle-card {
+  width: 80%;
+  height: 80%;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0 auto; /* perfect horizontal centering */
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  box-sizing: border-box;
+}
+
+/* Normalize inner card pieces so card remains visually centered */
+.bb--cube .bb__swiper .swiper-slide .bb__bundle-card .bb__bundle-image {
+  height: 55%;
+}
+.bb--cube .bb__swiper .swiper-slide .bb__bundle-card .bb__bundle-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Ensure cube slides are properly positioned */
+.bb--cube .bb__swiper .swiper-slide-active {
+  z-index: 2;
+}
+
+.bb--cube .bb__swiper .swiper-slide-next,
+.bb--cube .bb__swiper .swiper-slide-prev {
+  z-index: 1;
+}
+
+/* Cube navigation buttons */
+.bb--cube .bb__swiper .swiper-button-next,
+.bb--cube .bb__swiper .swiper-button-prev {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
+}
+.bb--cube .bb__swiper .swiper-button-next:after,
+.bb--cube .bb__swiper .swiper-button-prev:after {
+  font-size: 18px;
+}
+/* Cube pagination - fixed positioning inside container */
+.bb--cube .bb__swiper .swiper-pagination {
+  position: absolute !important;
+  bottom: 20px !important; /* positioned inside container with safe margin */
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  text-align: center !important;
+  margin: 0 !important;
+  z-index: 20 !important;
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 8px 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.bb--cube .bb__swiper .swiper-pagination-bullet {
+  background: rgba(255, 255, 255, 0.5) !important;
+  opacity: 1 !important;
+  width: 10px !important;
+  height: 10px !important;
+  margin: 0 4px !important;
+  border-radius: 50% !important;
+  transition: all 0.3s ease !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.bb--cube .bb__swiper .swiper-pagination-bullet-active {
+  background: #fff !important;
+  transform: scale(1.2) !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3) !important;
+}
+@media (max-width: 1024px) {
+  .bb--cube .bb__swiper { height: 540px !important; } /* increased for pagination space */
+  .bb--cube-modern .bb__swiper { height: 540px !important; }
+  .bb--cube .bb__swiper .swiper-slide .bb__bundle-card { width: 85%; height: 85%; }
+  .bb--cube .bb__swiper .swiper-pagination {
+    bottom: 16px !important; /* slightly closer on tablets */
+    padding: 6px 12px;
+  }
+  .bb--cube-modern .bb__swiper .swiper-pagination {
+    bottom: 16px !important;
+    padding: 10px 16px;
+  }
+}
+@media (max-width: 768px) {
+  .bb--cube .bb__swiper { height: 500px !important; } /* increased for pagination space */
+  .bb--cube-modern .bb__swiper { height: 500px !important; }
+  .bb--cube .bb__swiper .swiper-slide .bb__bundle-card { width: 90%; height: 90%; }
+  .bb--cube .bb__swiper .swiper-pagination {
+    bottom: 12px !important; /* closer on mobile */
+    padding: 4px 8px;
+  }
+  .bb--cube .bb__swiper .swiper-pagination-bullet {
+    width: 8px !important;
+    height: 8px !important;
+    margin: 0 3px !important;
+  }
+  .bb--cube-modern .bb__swiper .swiper-pagination {
+    bottom: 12px !important;
+    padding: 8px 12px;
+  }
+  .bb--cube-modern .swiper-pagination-bullet {
+    width: 10px;
+    height: 10px;
+    margin: 0 4px;
+  }
+}
+.bb--flip .bb__swiper {
+  height: 450px;
+}
+.bb--flip .bb__swiper .swiper-slide {
+  width: 100%;
+  height: 100%;
+}
+.bb--flip .bb__swiper .swiper-slide .bb__bundle-card {
+  width: 90%;
+  height: 90%;
+  margin: auto;
+}
+.bb--flip .bb__swiper .swiper-slide,
+.bb--flip .bb__swiper .swiper-slide .bb__bundle-card {
+  transform-origin: center center;
+}
+.bb--coverflow .bb__swiper {
+  height: auto;
+  max-width: 1100px;
+  margin: 0 auto;
+  overflow: hidden; /* prevent slides floating out of container */
+  position: relative; /* anchor pagination if needed */
+}
+.bb--coverflow .bb__swiper .swiper-slide {
+  width: 260px;
+  height: auto;
+  margin-right: 18px !important; /* ensure space between slides */
+}
+.bb--classic .bb__swiper,
+.bb--loop .bb__swiper {
+  height: auto;
+  perspective: none;
+}
+.bb--classic .bb__swiper .swiper-slide,
+  .bb--loop .bb__swiper .swiper-slide {
+    width: 280px;
+  height: auto;
+  transform: none;
+  }
+.bb--motion .bb__swiper {
+  height: auto;
+}
+  .bb--motion .bb__swiper .swiper-slide {
+  transition: transform 320ms ease, opacity 320ms ease;
+  transform: scale(0.96);
+  opacity: 0.95;
+  z-index: 1;
+  filter: none;
+}
+.bb--motion .bb__swiper .swiper-slide.swiper-slide-active {
+  transform: scale(1.05);
+  opacity: 1;
+  z-index: 3;
+}
+@media (max-width: 768px) {
+  .bb--coverflow .bb__swiper .swiper-slide,
+  .bb--classic .bb__swiper .swiper-slide,
+  .bb--loop .bb__swiper .swiper-slide {
+    width: 80%;
+    max-width: 360px;
   }
 }
