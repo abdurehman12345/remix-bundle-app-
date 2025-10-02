@@ -111,12 +111,6 @@
   function init(){ 
     log('Initializing hidden addon hiding');
     hideTagged(document); 
-    
-    // Run again after a short delay to catch any missed products
-    setTimeout(() => {
-      log('Second pass - catching missed products');
-      hideTagged(document);
-    }, 500);
   }
   
   // Multiple event listeners for comprehensive coverage
@@ -140,23 +134,11 @@
       setTimeout(init, 100);
     };
   }
-  
-  // Additional aggressive hiding - run every 2 seconds for first 10 seconds
-  let aggressiveCount = 0;
-  const aggressiveInterval = setInterval(() => {
-    if (aggressiveCount >= 5) {
-      clearInterval(aggressiveInterval);
-      return;
-    }
-    log(`Aggressive hiding pass ${aggressiveCount + 1}`);
-    hideTagged(document);
-    aggressiveCount++;
-  }, 2000);
   try{
     let queued = false;
     const obs = new MutationObserver(()=>{
       if (queued) return; queued = true;
-      setTimeout(()=>{ queued = false; hideTagged(document); }, 10);
+      setTimeout(()=>{ queued = false; hideTagged(document); }, 100);
     });
     obs.observe(document.documentElement, { childList:true, subtree:true });
   }catch(_){ }
