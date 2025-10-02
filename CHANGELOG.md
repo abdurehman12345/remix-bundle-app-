@@ -1,79 +1,148 @@
-# @shopify/shopify-app-template-remix
+# 📝 Changelog
 
-## 2025.07.07
-- [#1103](https://github.com/Shopify/shopify-app-template-remix/pull/1086) Remove deprecated .npmrc config values
+All notable changes to Bundle App will be documented in this file.
 
-## 2025.06.12
-- [#1075](https://github.com/Shopify/shopify-app-template-remix/pull/1075) Add Shopify MCP to [VSCode configs](https://code.visualstudio.com/docs/copilot/chat/mcp-servers#_enable-mcp-support-in-vs-code)
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 2025.06.12
--[#1082](https://github.com/Shopify/shopify-app-template-remix/pull/1082) Remove local Shopify CLI from the template. Developers should use the Shopify CLI [installed globally](https://shopify.dev/docs/api/shopify-cli#installation).
-## 2025.03.18
--[#998](https://github.com/Shopify/shopify-app-template-remix/pull/998) Update to Vite 6
+## [2.1.0] - 2025-01-02
 
-## 2025.03.01
-- [#982](https://github.com/Shopify/shopify-app-template-remix/pull/982) Add Shopify Dev Assistant extension to the VSCode extension recommendations
+### 🚀 Added
+- **Comprehensive Documentation System**
+  - Created detailed `ARCHITECTURE.md` with system overview
+  - Added `PROJECT_OVERVIEW.md` with complete functionality guide
+  - Updated `README.md` with modern formatting and badges
+  - Included performance metrics and security documentation
 
-## 2025.01.31
-- [#952](https://github.com/Shopify/shopify-app-template-remix/pull/952) Update to Shopify App API v2025-01
+- **Shared Utility Modules**
+  - `app/utils/cors.server.js` - Centralized CORS handling
+  - `app/utils/image.server.js` - Image URL normalization utilities
+  - `app/utils/bundle.server.js` - Bundle operations and calculations
+  - Reusable functions for improved maintainability
 
-## 2025.01.23
+- **Enhanced CSS System**
+  - `enhanced-bundle-cards.css` - Modern 3D card design system
+  - CSS custom properties for theming
+  - Improved visual hierarchy and consistency
+  - Glassmorphism effects and modern styling
 
-- [#923](https://github.com/Shopify/shopify-app-template-remix/pull/923) Update `@shopify/shopify-app-session-storage-prisma` to v6.0.0
+### 🔧 Changed
+- **Code Organization**
+  - Moved assets to proper directory structure
+  - Integrated enhanced CSS into main bundle stylesheet
+  - Improved import/export patterns for better tree shaking
 
-## 2025.01.8
+- **Performance Optimizations**
+  - Reduced code duplication across routes
+  - Optimized image handling with shared utilities
+  - Improved bundle calculation efficiency
+  - Better error handling and graceful degradation
 
-- [#923](https://github.com/Shopify/shopify-app-template-remix/pull/923) Enable GraphQL autocomplete for Javascript
+### 🐛 Fixed
+- **Duplicate Code Removal**
+  - Removed duplicate `showEnhancedLoading` function in `bundle.js`
+  - Eliminated duplicate CORS handling in `apps.$bundleId.jsx`
+  - Consolidated image normalization logic
 
-## 2024.12.19
+- **File Organization**
+  - Moved `enhanced-bundle-cards.css` to proper assets directory
+  - Cleaned up git status by staging all changes
+  - Removed unused test files and debug routes
 
-- [#904](https://github.com/Shopify/shopify-app-template-remix/pull/904) bump `@shopify/app-bridge-react` to latest
--
-## 2024.12.18
+### 🗑️ Removed
+- **Unused Files**
+  - `app/routes/apps.bundles.test.jsx`
+  - `app/routes/apps.debug.jsx`
+  - `app/routes/apps.html.jsx`
+  - `app/routes/apps.test.jsx`
+  - `extensions/bundle-builder/assets/bundle-3d-carousel.js`
+  - Various test files in `tests/` directory
 
-- [875](https://github.com/Shopify/shopify-app-template-remix/pull/875) Add Scopes Update Webhook
-## 2024.12.05
+### 📚 Documentation
+- **Architecture Documentation**
+  - Complete system architecture overview
+  - Database schema documentation
+  - API endpoint specifications
+  - Security and performance details
 
-- [#910](https://github.com/Shopify/shopify-app-template-remix/pull/910) Install `openssl` in Docker image to fix Prisma (see [#25817](https://github.com/prisma/prisma/issues/25817#issuecomment-2538544254))
-- [#907](https://github.com/Shopify/shopify-app-template-remix/pull/907) Move `@remix-run/fs-routes` to `dependencies` to fix Docker image build
-- [#899](https://github.com/Shopify/shopify-app-template-remix/pull/899) Disable v3_singleFetch flag
-- [#898](https://github.com/Shopify/shopify-app-template-remix/pull/898) Enable the `removeRest` future flag so new apps aren't tempted to use the REST Admin API.
+- **Developer Guide**
+  - Setup and installation instructions
+  - Development workflow documentation
+  - Code quality guidelines
+  - Deployment procedures
 
-## 2024.12.04
+### 🔒 Security
+- **CORS Improvements**
+  - Centralized CORS configuration
+  - Configurable origin whitelist
+  - Improved security headers
 
-- [#891](https://github.com/Shopify/shopify-app-template-remix/pull/891) Enable remix future flags.
+- **Input Validation**
+  - Enhanced data sanitization
+  - Better error handling
+  - Secure file upload handling
 
-## 2024.11.26
-- [888](https://github.com/Shopify/shopify-app-template-remix/pull/888) Update restResources version to 2024-10
+## [2.0.0] - Previous Version
 
-## 2024.11.06
+### Features
+- 3D Ring Carousel with multiple visual styles
+- Advanced bundle types (Fixed, Mix & Match, Build-a-Box)
+- Intelligent pricing engine with tiered pricing
+- Premium personalization features
+- Subscription billing system
+- Comprehensive admin dashboard
+- Theme app extension integration
+- Analytics and reporting
 
-- [881](https://github.com/Shopify/shopify-app-template-remix/pull/881) Update to the productCreate mutation to use the new ProductCreateInput type
+---
 
-## 2024.10.29
+## 📋 Migration Guide
 
-- [876](https://github.com/Shopify/shopify-app-template-remix/pull/876) Update shopify-app-remix to v3.4.0 and shopify-app-session-storage-prisma to v5.1.5
+### From v2.0.0 to v2.1.0
 
-## 2024.10.02
+1. **Update Dependencies**
+   ```bash
+   npm install
+   npm run setup
+   ```
 
-- [863](https://github.com/Shopify/shopify-app-template-remix/pull/863) Update to Shopify App API v2024-10 and shopify-app-remix v3.3.2
+2. **Database Migration**
+   ```bash
+   npx prisma generate
+   npx prisma migrate dev
+   ```
 
-## 2024.09.18
+3. **Asset Updates**
+   - Enhanced CSS is now automatically imported
+   - No manual integration required for styling updates
 
-- [850](https://github.com/Shopify/shopify-app-template-remix/pull/850) Removed "~" import alias
+4. **Code Updates**
+   - Utility functions are available for import
+   - CORS handling is now centralized
+   - Image processing uses shared utilities
 
-## 2024.09.17
+### Breaking Changes
+- None in this version - fully backward compatible
 
-- [842](https://github.com/Shopify/shopify-app-template-remix/pull/842) Move webhook processing to individual routes
+### New Environment Variables
+- No new environment variables required
 
-## 2024.08.19
+---
 
-Replaced deprecated `productVariantUpdate` with `productVariantsBulkUpdate`
+## 🚀 Upcoming Features
 
-## v2024.08.06
+### v2.2.0 (Planned)
+- [ ] Advanced analytics dashboard
+- [ ] Multi-language support improvements
+- [ ] Enhanced mobile experience
+- [ ] Performance monitoring integration
 
-Allow `SHOP_REDACT` webhook to process without admin context
+### v2.3.0 (Planned)
+- [ ] AI-powered bundle recommendations
+- [ ] Advanced inventory management
+- [ ] Custom theme integration tools
+- [ ] Extended API capabilities
 
-## v2024.07.16
+---
 
-Started tracking changes and releases using calver
+**For support or questions about any changes, please refer to the documentation or contact the development team.**
