@@ -1,3 +1,27 @@
+<style>
+/* INSTANT HIDE: CSS-only hiding for immediate effect */
+[data-product-tags*="hidden_addon"],
+[data-product-tags*="hidden-product"], 
+[data-product-tags*="hidden_product"],
+[data-product-tags*="bundle-addon"],
+[data-product-tags*="bundle_addon"],
+[data-tags*="hidden_addon"],
+[data-tags*="hidden-product"],
+[data-tags*="hidden_product"], 
+[data-tags*="bundle-addon"],
+[data-tags*="bundle_addon"] {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Hide by URL patterns */
+a[href*="/products/hidden-"],
+a[href*="/products/bundle-addon"],
+a[href*="/products/addon-"] {
+  display: none !important;
+}
+</style>
+
 <script src="{{ 'hide-hidden-addons.js' | asset_url }}" defer></script>
 
 {% schema %}
