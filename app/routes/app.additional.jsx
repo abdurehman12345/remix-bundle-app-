@@ -493,7 +493,7 @@ export const action = async ({ request }) => {
       }
     }
 
-    for (const c of (bundle.cards || [])) {
+    for (const c of (bundle.BundleCard || [])) {
       if (!c.shopifyProductId) {
         try {
           const title = `Card: ${c.name}`;
@@ -1861,7 +1861,7 @@ export default function AdditionalPage() {
         <Modal.Section>
           <BlockStack gap="400">
             <Text as="h3" variant="headingMd">Wraps</Text>
-            {bundle.wrappingOptions?.length ? (
+            {bundle.WrappingOption?.length ? (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
@@ -1873,7 +1873,7 @@ export default function AdditionalPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {bundle.wrappingOptions.map(w => (
+                    {bundle.WrappingOption.map(w => (
                       <tr key={w.id}>
                         <td style={{ padding: '8px', borderBottom: '1px solid #f1f5f9' }}>{w.imageUrl && (<img src={w.imageUrl} alt={w.name} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }} />)}</td>
                         <td style={{ padding: '8px', borderBottom: '1px solid #f1f5f9' }}>{w.name}</td>
@@ -1897,7 +1897,7 @@ export default function AdditionalPage() {
             <Divider />
 
             <Text as="h3" variant="headingMd">Cards</Text>
-            {bundle.cards?.length ? (
+            {bundle.BundleCard?.length ? (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
@@ -1909,7 +1909,7 @@ export default function AdditionalPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {bundle.cards.map(c => (
+                    {bundle.BundleCard.map(c => (
                       <tr key={c.id}>
                         <td style={{ padding: '8px', borderBottom: '1px solid #f1f5f9' }}>{c.imageUrl && (<img src={c.imageUrl} alt={c.name} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }} />)}</td>
                         <td style={{ padding: '8px', borderBottom: '1px solid #f1f5f9' }}>{c.name}</td>

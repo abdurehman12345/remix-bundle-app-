@@ -907,10 +907,10 @@ export default function BundleDetailManager() {
                       {/* Current Products */}
                       <div>
                         <Text variant="bodyMd" as="h4" style={{ marginBottom: '16px', fontWeight: '600' }}>
-                          Products in Bundle ({bundle.products.length})
+                          Products in Bundle ({bundle.BundleProduct.length})
                         </Text>
                         
-                        {bundle.products.length === 0 ? (
+                        {bundle.BundleProduct.length === 0 ? (
                           <EmptyState
                             heading="No products added"
                             image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
@@ -920,7 +920,7 @@ export default function BundleDetailManager() {
                         ) : (
                           <ResourceList
                             resourceName={{ singular: 'product', plural: 'products' }}
-                            items={bundle.products}
+                            items={bundle.BundleProduct}
                             renderItem={(p) => (
                               <ResourceList.Item id={p.id}>
                                 <InlineStack align="space-between" gap="300">
@@ -967,10 +967,10 @@ export default function BundleDetailManager() {
                       {/* Current Wraps */}
                       <div>
                         <Text variant="bodyMd" as="h4" style={{ marginBottom: '16px', fontWeight: '600' }}>
-                          Gift Wrap Options ({bundle.wrappingOptions.length})
+                          Gift Wrap Options ({bundle.WrappingOption.length})
                         </Text>
                         
-                        {bundle.wrappingOptions.length === 0 ? (
+                        {bundle.WrappingOption.length === 0 ? (
                           <EmptyState
                             heading="No gift wrap options"
                             image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
@@ -980,7 +980,7 @@ export default function BundleDetailManager() {
                         ) : (
                           <ResourceList
                             resourceName={{ singular: 'wrap', plural: 'wraps' }}
-                            items={bundle.wrappingOptions}
+                            items={bundle.WrappingOption}
                             renderItem={(w) => (
                               <ResourceList.Item id={w.id}>
                                 <InlineStack align="space-between" gap="300">

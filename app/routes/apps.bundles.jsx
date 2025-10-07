@@ -62,7 +62,7 @@ export const loader = async ({ request }) => {
         ]
       },
       include: {
-        products: {
+        BundleProduct: {
           select: {
             id: true,
             productGid: true,
@@ -74,7 +74,7 @@ export const loader = async ({ request }) => {
             max: true
           }
         },
-        wrappingOptions: {
+        WrappingOption: {
           select: {
             id: true,
             name: true,
@@ -82,7 +82,7 @@ export const loader = async ({ request }) => {
             imageUrl: true
           }
         },
-        cards: {
+        BundleCard: {
           select: {
             id: true,
             name: true,
@@ -145,18 +145,18 @@ export const loader = async ({ request }) => {
         allowMessage: Boolean(bundle.allowMessage),
         allowCardUpload: Boolean(bundle.allowCardUpload),
         wrapRequired: Boolean(bundle.wrapRequired),
-        productCount: bundle.products?.length || 0,
-        wrapCount: bundle.wrappingOptions?.length || 0,
-        cardCount: bundle.cards?.length || 0,
-        products: (plan === 'FREE' ? (bundle.products || []).slice(0,6) : (bundle.products || [])).map(p => ({
+        productCount: bundle.BundleProduct?.length || 0,
+        wrapCount: bundle.WrappingOption?.length || 0,
+        cardCount: bundle.BundleCard?.length || 0,
+        products: (plan === 'FREE' ? (bundle.BundleProduct || []).slice(0,6) : (bundle.BundleProduct || [])).map(p => ({
           ...p,
           imageUrl: toAbsoluteImageUrl(p.imageUrl, appBaseUrl)
         })),
-        wrappingOptions: (bundle.wrappingOptions || []).map(w => ({
+        wrappingOptions: (bundle.WrappingOption || []).map(w => ({
           ...w,
           imageUrl: toAbsoluteImageUrl(w.imageUrl, appBaseUrl)
         })),
-        cards: (bundle.cards || []).map(c => ({
+        cards: (bundle.BundleCard || []).map(c => ({
           ...c,
           imageUrl: toAbsoluteImageUrl(c.imageUrl, appBaseUrl)
         }))

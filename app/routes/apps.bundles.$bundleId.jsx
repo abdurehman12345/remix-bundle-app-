@@ -170,7 +170,7 @@ export const action = async ({ request, params }) => {
     let productTotal = productSubtotal;
     const itemsCount = selectedProducts.length;
     if (bundle.BundleTierPrice && bundle.BundleTierPrice.length > 0) {
-      const applicable = bundle.tierPrices
+      const applicable = bundle.BundleTierPrice
         .filter(t => t.minQuantity <= itemsCount)
         .sort((a,b) => b.minQuantity - a.minQuantity)[0];
       if (applicable) {
