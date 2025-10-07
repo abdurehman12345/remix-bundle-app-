@@ -30,7 +30,7 @@
     {
       "type": "select",
       "id": "carousel_style",
-      "label": "Carousel Style",
+      "label": "Carousel Style (PRO only)",
       "default": "coverflow",
       "options": [
         { "value": "coverflow", "label": "Coverflow (3D angled)" },
@@ -39,7 +39,7 @@
         { "value": "slide", "label": "Classic / Slide" },
         { "value": "motion", "label": "Center Pop (Custom)" }
       ],
-      "info": "Pro: Advanced styles. Free plan will use Classic/Slide."
+      "info": "PRO plan only. Free plan uses Classic/Slide style automatically."
     },
     {
       "type": "checkbox",
@@ -244,6 +244,17 @@ Revolutionary 3D ring carousel with modern glassmorphism design
   assign keyboard_nav = s.keyboard_navigation
   assign preload_images = s.preload_images
   assign carousel_style = s.carousel_style | default: 'coverflow'
+  
+  # Plan gating: Force classic style for FREE plan
+  assign shop_plan = 'FREE'
+  if shop.metafields and shop.metafields.bundle_app_plan
+    assign shop_plan = shop.metafields.bundle_app_plan
+  endif
+  
+  # Override carousel style to classic for FREE plan
+  if shop_plan == 'FREE'
+    assign carousel_style = 'slide'
+  endif
 -%}
 
 {%- comment -%} Enhanced configuration script {%- endcomment -%}

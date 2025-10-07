@@ -1,4 +1,6 @@
 (function(){
+'use strict';
+/* global Shopify, Swiper */
   'use strict';
   
   // Utility functions
@@ -1288,9 +1290,13 @@
             form.set('heroColorStart', c1.value || '');
             form.set('heroColorEnd', c2.value || '');
             // Save via app proxy endpoint so it works from storefront/theme editor
-            const shopParam = (window.Shopify && Shopify.shop) ? `?shop=${encodeURIComponent(Shopify.shop)}` : '';
+            const urlParams = new URLSearchParams(location.search);
+            const shopFromQuery = urlParams.get('shop') || urlParams.get('shopify') || '';
+            const shopFromGlobal = (window.Shopify && Shopify.shop) ? String(Shopify.shop) : '';
+            const shop = shopFromGlobal || shopFromQuery || (root && root.dataset && root.dataset.shop) || '';
+            const shopParam = shop ? `?shop=${encodeURIComponent(shop)}` : '';
             // Use app proxy path under /apps/bundles/* per app proxy config
-            const res = await fetch(`/apps/bundles/hero${shopParam}`, { method: 'POST', body: form, credentials: 'include' });
+            const res = await fetch(`/apps/bundles/hero${shopParam}`, { method: 'POST', body: form, credentials: 'include', cache: 'no-store' });
             if (res.ok) {
               statusEl.textContent = 'Saved';
               setTimeout(() => statusEl.textContent = '', 2000);
@@ -1446,7 +1452,11 @@
             form.set('buttonBg', (inpBtn.value || ''));
             form.set('badgeBg', (inpBadge.value || ''));
             form.set('containerBg', (inpBg.value || ''));
-            const shopParam = (window.Shopify && Shopify.shop) ? `?shop=${encodeURIComponent(Shopify.shop)}` : '';
+            const urlParams = new URLSearchParams(location.search);
+            const shopFromQuery = urlParams.get('shop') || urlParams.get('shopify') || '';
+            const shopFromGlobal = (window.Shopify && Shopify.shop) ? String(Shopify.shop) : '';
+            const shop = shopFromGlobal || shopFromQuery || (root && root.dataset && root.dataset.shop) || '';
+            const shopParam = shop ? `?shop=${encodeURIComponent(shop)}` : '';
             const res = await fetch(`/apps/bundles/carousel${shopParam}`, { method: 'POST', body: form, credentials: 'include', cache: 'no-store' });
             let body = null; try { body = await res.json(); } catch(_) {}
             if (res.ok && body && body.ok) {

@@ -2,7 +2,7 @@ import { json } from "@remix-run/node";
 import { randomUUID } from "node:crypto";
 import { useLoaderData, useFetcher } from "@remix-run/react";
 import React from "react";
-import { Page, Layout, Card, Text, BlockStack, TextField, Button, InlineStack, Link, Banner, Divider, InlineGrid } from "@shopify/polaris";
+import { Page, Layout, Card, Text, BlockStack, TextField, Button, InlineStack, Banner, Divider, InlineGrid } from "@shopify/polaris";
 import prisma from "../db.server";
 import { authenticate } from "../shopify.server";
 import nodemailer from "nodemailer";

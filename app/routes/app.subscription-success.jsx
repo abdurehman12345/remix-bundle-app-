@@ -13,9 +13,22 @@ export async function loader({ request }) {
     where: { shop }
   });
   
-  const settings = await prisma.shopSettings.findUnique({
-    where: { shop }
-  });
+  // If subscription is active, ensure ShopSettings.plan is PRO
+  if (subscription?.status) {
+    const isActive = String(subscription.status).toUpperCase() === "ACTIVE";
+    await prisma.shopSettings.upsert({
+      where: { shop },
+      update: { plan: isActive ? "PRO" : "FREE" },
+      create: { shop, plan: isActive ? "PRO" : "FREE" }
+    });
+    await prisma.shopSubscription.upsert({
+      where: { shop },
+      update: { status: subscription.status, planName: isActive ? (subscription.planName || "Pro Plan") : null },
+      create: { shop, status: subscription.status, planName: isActive ? (subscription.planName || "Pro Plan") : null }
+    });
+  }
+
+  const settings = await prisma.shopSettings.findUnique({ where: { shop } });
   
   return json({
     shop,

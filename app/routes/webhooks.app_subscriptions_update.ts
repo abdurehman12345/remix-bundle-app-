@@ -47,7 +47,6 @@ export async function action({ request }: ActionFunctionArgs) {
     // Update shop plan based on subscription status
     const status = (appSub?.status || "").toUpperCase();
     const isActive = status === "ACTIVE";
-    const isCancelled = status === "CANCELLED" || status === "EXPIRED" || status === "FROZEN";
     
     const newPlan = isActive ? "PRO" : "FREE";
     
@@ -56,6 +55,12 @@ export async function action({ request }: ActionFunctionArgs) {
       update: { plan: newPlan },
       create: { shop, plan: newPlan }
     });
+
+    // Keep planName in sync when downgrading or upgrading
+    await prisma.shopSubscription.update({
+      where: { shop },
+      data: { planName: isActive ? (appSub?.name || 'Pro Plan') : null }
+    }).catch(() => {});
 
     console.log(`Updated shop ${shop} plan to: ${newPlan} (status: ${status})`);
 

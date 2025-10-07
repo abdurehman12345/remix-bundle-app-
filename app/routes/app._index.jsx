@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLoaderData } from "@remix-run/react";
-import { Page, Layout, Text, Card, Button, BlockStack, List, Link, InlineStack, Modal, TextField, Banner } from "@shopify/polaris";
+import { Page, Layout, Text, Card, Button, BlockStack, List, InlineStack, Banner } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 

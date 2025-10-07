@@ -32,7 +32,7 @@ export const action = async ({ request }) => {
     for (const code of codes) {
       try {
         // Lookup price rule by code
-        const lookupRes = await fetch(`https://${shop}/admin/api/2025-01/discount_codes/lookup.json?code=${encodeURIComponent(code)}`, {
+        const lookupRes = await fetch(`https://${shop}/admin/api/2024-10/discount_codes/lookup.json?code=${encodeURIComponent(code)}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
         });
@@ -42,7 +42,7 @@ export const action = async ({ request }) => {
         if (!priceRuleId) continue;
 
         // Delete the price rule to invalidate any future use
-        await fetch(`https://${shop}/admin/api/2025-01/price_rules/${priceRuleId}.json`, {
+        await fetch(`https://${shop}/admin/api/2024-10/price_rules/${priceRuleId}.json`, {
           method: 'DELETE',
           headers: { 'X-Shopify-Access-Token': accessToken },
         });

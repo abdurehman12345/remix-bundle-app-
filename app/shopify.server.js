@@ -11,7 +11,7 @@ import { json } from "@remix-run/node";
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
-  apiVersion: ApiVersion.January25,
+  apiVersion: ApiVersion.October24,
   scopes: process.env.SCOPES?.split(","),
   appUrl: process.env.SHOPIFY_APP_URL || "",
   authPathPrefix: "/auth",
@@ -30,7 +30,7 @@ const shopify = shopifyApp({
 (async () => {
   try {
     const appUrl = process.env.SHOPIFY_APP_URL || "";
-    const webhooksVersion = (await import("../shopify.app.toml", { with: { type: "json" } }).catch(() => ({ default: {} }))).default?.webhooks?.api_version || process.env.SHOPIFY_WEBHOOKS_API_VERSION || "2025-07";
+    const webhooksVersion = process.env.SHOPIFY_WEBHOOKS_API_VERSION || "2025-07";
     const appHandle = process.env.SHOPIFY_APP_HANDLE || "";
     const envWhatsapp = process.env.APP_WHATSAPP_NUMBER || null;
     const envEmail = process.env.APP_CONTACT_EMAIL || null;
@@ -47,7 +47,7 @@ const shopify = shopifyApp({
 })();
 
 export default shopify;
-export const apiVersion = ApiVersion.January25;
+export const apiVersion = ApiVersion.October24;
 export const addDocumentResponseHeaders = shopify.addDocumentResponseHeaders;
 export const authenticate = shopify.authenticate;
 export const unauthenticated = shopify.unauthenticated;

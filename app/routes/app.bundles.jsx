@@ -12,11 +12,9 @@ import {
   InlineStack,
   ResourceList,
   Badge,
-  Link as PolarisLink,
   Checkbox,
   Select,
   Thumbnail,
-  Combobox,
   Modal,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
@@ -883,8 +881,7 @@ export default function BundlesIndex() {
               <div style={{ textAlign: 'center', padding: '20px' }}>
                 <Text tone="subdued">Loading products...</Text>
               </div>
-            )}
-            
+            )}            
             {/* Products Grid */}
             {!isLoadingProducts && !isSearching && (
               <div style={{ 
@@ -916,8 +913,7 @@ export default function BundlesIndex() {
                       <Checkbox
                         checked={isSelected}
                         onChange={() => {}}
-                      />
-                      
+                      />                      
                       {product.imageUrl ? (
                         <Thumbnail
                           source={product.imageUrl}
@@ -974,7 +970,6 @@ export default function BundlesIndex() {
                 })}
               </div>
             )}
-            
             {/* No Results */}
             {!isLoadingProducts && !isSearching && (
               productSearchQuery.trim() ? searchResults.length === 0 : availableProducts.length === 0

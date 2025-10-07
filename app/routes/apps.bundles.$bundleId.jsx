@@ -70,7 +70,37 @@ export const action = async ({ request, params }) => {
     // Find latest session for this shop to get access token
     const shopSession = await prisma.session.findFirst({ where: { shop }, orderBy: { expires: 'desc' } });
     const accessToken = shopSession?.accessToken;
-    if (!accessToken) return json({ error: 'No session for shop' }, { status: 401, headers: corsHeaders });
+    if (!accessToken) {
+      console.error('❌ No access token for shop:', shop);
+      return json({ error: 'No session for shop' }, { status: 401, headers: corsHeaders });
+    }
+
+    // Check if session is expired or invalid
+    if (shopSession.expires && new Date(shopSession.expires) < new Date()) {
+      console.error('❌ Session expired for shop:', shop);
+      return json({ error: 'Session expired' }, { status: 401, headers: corsHeaders });
+    }
+    
+    // Debug token format (first 10 chars only for security)
+    console.log('🔑 Access token format check:', accessToken ? `${accessToken.substring(0, 10)}...` : 'null');
+    console.log('🏪 Shop:', shop);
+    console.log('📅 Session expires:', shopSession?.expires);
+    console.log('🔍 Session scope:', shopSession?.scope);
+    
+    // Test authentication with a simple API call
+    try {
+      const testRes = await fetch(`https://${shop}/admin/api/2024-10/shop.json`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
+      });
+      console.log('🧪 Auth test result:', testRes.status, testRes.ok ? 'SUCCESS' : 'FAILED');
+      if (!testRes.ok) {
+        const errorText = await testRes.text().catch(() => 'Unable to read error');
+        console.error('❌ Auth test failed:', errorText);
+      }
+    } catch (err) {
+      console.error('❌ Auth test error:', err.message);
+    }
 
     const bundleId = params.bundleId;
     const body = await request.json().catch(() => ({}));
@@ -175,7 +205,7 @@ export const action = async ({ request, params }) => {
 
     async function cleanupBundlePriceRules(maxAgeMinutes = 10){
       try {
-        const listRes = await fetch(`https://${shop}/admin/api/2025-01/price_rules.json?limit=250`, {
+        const listRes = await fetch(`https://${shop}/admin/api/2024-10/price_rules.json?limit=250`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
         });
@@ -189,7 +219,7 @@ export const action = async ({ request, params }) => {
           const tooOld = startsAt && (now - startsAt) > maxAgeMinutes*60*1000;
           if (isBundle && (tooOld || pr?.usage_count >= 1)) {
             try {
-              await fetch(`https://${shop}/admin/api/2025-01/price_rules/${pr.id}.json`, {
+              await fetch(`https://${shop}/admin/api/2024-10/price_rules/${pr.id}.json`, {
                 method: 'DELETE',
                 headers: { 'X-Shopify-Access-Token': accessToken },
               });
@@ -238,11 +268,14 @@ export const action = async ({ request, params }) => {
               combines_with: { order_discounts: false, product_discounts: false, shipping_discounts: false }
             }
           };
-          const prRes = await fetch(`https://${shop}/admin/api/2025-01/price_rules.json`, {
+          console.log('🚀 Creating price rule with body:', JSON.stringify(prBody, null, 2));
+          const prRes = await fetch(`https://${shop}/admin/api/2024-10/price_rules.json`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
             body: JSON.stringify(prBody)
           });
+          console.log('📊 Price rule response status:', prRes.status);
+          console.log('📊 Price rule response headers:', Object.fromEntries(prRes.headers.entries()));
           let prj = null; let prText = null;
           if (prRes.ok) {
             prj = await prRes.json();
@@ -257,7 +290,7 @@ export const action = async ({ request, params }) => {
           }
           if (priceRuleId) {
             const code = `BNDL-${Math.random().toString(36).slice(2,8).toUpperCase()}`;
-            const dcRes = await fetch(`https://${shop}/admin/api/2025-01/price_rules/${priceRuleId}/discount_codes.json`, {
+            const dcRes = await fetch(`https://${shop}/admin/api/2024-10/price_rules/${priceRuleId}/discount_codes.json`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
               body: JSON.stringify({ discount_code: { code } })
@@ -287,7 +320,7 @@ export const action = async ({ request, params }) => {
       if (onlineStorePublicationId) return onlineStorePublicationId;
       try {
         const q = `#graphql\n          query GetPublications {\n            publications(first: 10) { nodes { id catalog { title } } }\n          }`;
-        const pubRes = await fetch(`https://${shop}/admin/api/2025-01/graphql.json`, {
+        const pubRes = await fetch(`https://${shop}/admin/api/2024-10/graphql.json`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
           body: JSON.stringify({ query: q })
@@ -308,7 +341,7 @@ export const action = async ({ request, params }) => {
         // Create new draft product
         const mutation = `mutation CreateProduct($input: ProductInput!) { \n          productCreate(input: $input) { \n            product { id } \n            userErrors { field message } \n          } \n        }`;
         
-        const res = await fetch(`https://${shop}/admin/api/2025-01/graphql.json`, {
+        const res = await fetch(`https://${shop}/admin/api/2024-10/graphql.json`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
           body: JSON.stringify({ 
@@ -341,7 +374,7 @@ export const action = async ({ request, params }) => {
 
         // Ensure product is active and published to web via REST as well
         try {
-          await fetch(`https://${shop}/admin/api/2025-01/products/${productNumericId}.json`, {
+          await fetch(`https://${shop}/admin/api/2024-10/products/${productNumericId}.json`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
             body: JSON.stringify({ product: { id: Number(productNumericId), status: 'active', published_scope: 'web', published_at: new Date().toISOString() } })
@@ -350,7 +383,7 @@ export const action = async ({ request, params }) => {
 
         // Create variant for the new product
         try {
-          const cRes = await fetch(`https://${shop}/admin/api/2025-01/products/${productNumericId}/variants.json`, {
+          const cRes = await fetch(`https://${shop}/admin/api/2024-10/products/${productNumericId}/variants.json`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
             body: JSON.stringify({ 
@@ -377,7 +410,7 @@ export const action = async ({ request, params }) => {
 
               // Ensure inventory level is available at a location
               try {
-                const locRes = await fetch(`https://${shop}/admin/api/2025-01/locations.json`, {
+                const locRes = await fetch(`https://${shop}/admin/api/2024-10/locations.json`, {
                   method: 'GET',
                   headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
                 });
@@ -385,7 +418,7 @@ export const action = async ({ request, params }) => {
                   const lj = await locRes.json();
                   const firstLocation = (lj?.locations || []).find(l => l?.id);
                   if (firstLocation && vj.variant.inventory_item_id) {
-                    await fetch(`https://${shop}/admin/api/2025-01/inventory_levels/set.json`, {
+                    await fetch(`https://${shop}/admin/api/2024-10/inventory_levels/set.json`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
                       body: JSON.stringify({
@@ -403,7 +436,7 @@ export const action = async ({ request, params }) => {
                 const pubId = await getOnlineStorePublicationId();
                 if (pubId) {
                   const m = `#graphql\n                    mutation Publish($id: ID!, $pub: ID!) {\n                      publishablePublish(id: $id, input: { publicationId: $pub }) {\n                        publishable { __typename ... on Node { id } }\n                        userErrors { field message }\n                      }\n                    }`;
-                  await fetch(`https://${shop}/admin/api/2025-01/graphql.json`, {
+                  await fetch(`https://${shop}/admin/api/2024-10/graphql.json`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
                     body: JSON.stringify({ query: m, variables: { id: productIdGid, pub: pubId } })
@@ -414,7 +447,7 @@ export const action = async ({ request, params }) => {
               // Poll until variant is readable and purchasable
               for (let i = 0; i < 20; i++) {
                 try {
-                  const chk = await fetch(`https://${shop}/admin/api/2025-01/variants/${vj.variant.id}.json`, {
+                  const chk = await fetch(`https://${shop}/admin/api/2024-10/variants/${vj.variant.id}.json`, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
                   });
@@ -446,7 +479,7 @@ export const action = async ({ request, params }) => {
       // Try to find by tag bundle-<id>
       let productIdGid = null;
       try {
-        const resp = await fetch(`https://${shop}/admin/api/2025-01/graphql.json`, {
+        const resp = await fetch(`https://${shop}/admin/api/2024-10/graphql.json`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
           body: JSON.stringify({ query: `query ($q: String!) { products(first: 1, query: $q) { nodes { id title variants(first: 1) { nodes { id } } } } }`, variables: { q: `tag:'bundle-charge-master'` } })
@@ -461,7 +494,7 @@ export const action = async ({ request, params }) => {
         try {
           const title = `Bundle Charge - ${bundle.title}`;
           const mutation = `mutation CreateProduct($input: ProductInput!) { productCreate(input: $input) { product { id } userErrors { field message } } }`;
-          const res = await fetch(`https://${shop}/admin/api/2025-01/graphql.json`, {
+          const res = await fetch(`https://${shop}/admin/api/2024-10/graphql.json`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
             body: JSON.stringify({ query: mutation, variables: { input: { title, status: 'ACTIVE', tags: ['bundle-charge-master','hidden-product'], vendor: 'Bundle Add-on', productType: 'Bundle', publishedScope: 'WEB' } } })
@@ -481,7 +514,7 @@ export const action = async ({ request, params }) => {
         const pubId = await getOnlineStorePublicationId();
         if (pubId) {
           const publishMutation = `#graphql\n            mutation Publish($id: ID!, $pub: ID!) {\n              publishablePublish(id: $id, input: { publicationId: $pub }) { publishable { __typename ... on Node { id } } userErrors { field message } }\n            }`;
-          await fetch(`https://${shop}/admin/api/2025-01/graphql.json`, {
+          await fetch(`https://${shop}/admin/api/2024-10/graphql.json`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
             body: JSON.stringify({ query: publishMutation, variables: { id: productIdGid, pub: pubId } })
@@ -492,7 +525,7 @@ export const action = async ({ request, params }) => {
       // Also enforce ACTIVE via REST and set published_scope
       try {
         const productNumericId = String(productIdGid).split('/').pop();
-        await fetch(`https://${shop}/admin/api/2025-01/products/${productNumericId}.json`, {
+        await fetch(`https://${shop}/admin/api/2024-10/products/${productNumericId}.json`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
           body: JSON.stringify({ product: { id: Number(productNumericId), status: 'active', published_scope: 'web', published_at: new Date().toISOString() } })
@@ -505,7 +538,7 @@ export const action = async ({ request, params }) => {
       // Ensure single variant exists with price
       let variantId = null;
       try {
-        const vRes = await fetch(`https://${shop}/admin/api/2025-01/products/${productNumericId}/variants.json`, {
+        const vRes = await fetch(`https://${shop}/admin/api/2024-10/products/${productNumericId}/variants.json`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
         });
@@ -518,7 +551,7 @@ export const action = async ({ request, params }) => {
       if (variantId) {
         // Update price and attributes
         try {
-          await fetch(`https://${shop}/admin/api/2025-01/variants/${variantId}.json`, {
+          await fetch(`https://${shop}/admin/api/2024-10/variants/${variantId}.json`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
             body: JSON.stringify({ variant: { id: variantId, price, inventory_management: 'shopify', inventory_policy: 'continue', inventory_quantity: 999, inventory_item_id: null, requires_shipping: false } })
@@ -527,14 +560,14 @@ export const action = async ({ request, params }) => {
         
         // Ensure inventory level is available
         try {
-          const vGet = await fetch(`https://${shop}/admin/api/2025-01/variants/${variantId}.json`, {
+          const vGet = await fetch(`https://${shop}/admin/api/2024-10/variants/${variantId}.json`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
           });
           const vj = vGet.ok ? await vGet.json() : null;
           const invItemId = vj?.variant?.inventory_item_id;
           if (invItemId) {
-            const locRes = await fetch(`https://${shop}/admin/api/2025-01/locations.json`, {
+            const locRes = await fetch(`https://${shop}/admin/api/2024-10/locations.json`, {
               method: 'GET',
               headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
             });
@@ -542,7 +575,7 @@ export const action = async ({ request, params }) => {
               const lj = await locRes.json();
               const firstLocation = (lj?.locations || []).find(l => l?.id);
               if (firstLocation) {
-                await fetch(`https://${shop}/admin/api/2025-01/inventory_levels/set.json`, {
+                await fetch(`https://${shop}/admin/api/2024-10/inventory_levels/set.json`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
                   body: JSON.stringify({
@@ -561,7 +594,7 @@ export const action = async ({ request, params }) => {
 
       // Create variant
       try {
-        const cRes = await fetch(`https://${shop}/admin/api/2025-01/products/${productNumericId}/variants.json`, {
+        const cRes = await fetch(`https://${shop}/admin/api/2024-10/products/${productNumericId}/variants.json`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
           body: JSON.stringify({ variant: { option1: 'Default', title: 'Bundle', price, inventory_management: 'shopify', inventory_policy: 'continue', inventory_quantity: 999, taxable: false, weight: 0.0, weight_unit: 'kg', requires_shipping: false } })
@@ -572,7 +605,7 @@ export const action = async ({ request, params }) => {
             // Ensure inventory level
             try {
               if (vj.variant.inventory_item_id) {
-                const locRes = await fetch(`https://${shop}/admin/api/2025-01/locations.json`, {
+                const locRes = await fetch(`https://${shop}/admin/api/2024-10/locations.json`, {
                   method: 'GET',
                   headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
                 });
@@ -580,7 +613,7 @@ export const action = async ({ request, params }) => {
                   const lj = await locRes.json();
                   const firstLocation = (lj?.locations || []).find(l => l?.id);
                   if (firstLocation) {
-                    await fetch(`https://${shop}/admin/api/2025-01/inventory_levels/set.json`, {
+                    await fetch(`https://${shop}/admin/api/2024-10/inventory_levels/set.json`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
                       body: JSON.stringify({

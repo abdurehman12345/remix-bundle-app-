@@ -8,8 +8,56 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { Redirect } from "@shopify/app-bridge/actions";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session?.shop;
+
+  // Defensive: if a subscription is ACTIVE, ensure ShopSettings.plan is PRO
+  try {
+    const sub = await prisma.shopSubscription.findUnique({ where: { shop } });
+    if (sub && String(sub.status || '').toUpperCase() === 'ACTIVE') {
+      await prisma.shopSettings.upsert({
+        where: { shop },
+        update: { plan: 'PRO' },
+        create: { shop, plan: 'PRO' }
+      });
+    }
+    // Fallback: verify with Admin GraphQL in case webhook hasn't fired yet
+    try {
+      const q = `#graphql\nquery { appInstallation { activeSubscriptions { name status } } }`;
+      const resp = await admin.graphql(q);
+      if (resp?.ok) {
+        const data = await resp.json();
+        const active = Array.isArray(data?.data?.appInstallation?.activeSubscriptions)
+          ? data.data.appInstallation.activeSubscriptions
+          : [];
+        const hasActive = active.some(s => String(s?.status || '').toUpperCase() === 'ACTIVE');
+        if (hasActive) {
+          await prisma.shopSettings.upsert({
+            where: { shop },
+            update: { plan: 'PRO' },
+            create: { shop, plan: 'PRO' }
+          });
+          await prisma.shopSubscription.upsert({
+            where: { shop },
+            update: { status: 'ACTIVE', planName: 'Pro Plan' },
+            create: { shop, status: 'ACTIVE', planName: 'Pro Plan', subscriptionId: null, trialEndsAt: null }
+          });
+        } else {
+          await prisma.shopSettings.upsert({
+            where: { shop },
+            update: { plan: 'FREE' },
+            create: { shop, plan: 'FREE' }
+          });
+          await prisma.shopSubscription.upsert({
+            where: { shop },
+            update: { status: 'CANCELLED', planName: null },
+            create: { shop, status: 'CANCELLED', planName: null, subscriptionId: null, trialEndsAt: null }
+          });
+        }
+      }
+    } catch (_) {}
+  } catch (_) {}
+
   let settings = await prisma.shopSettings.findUnique({ where: { shop } });
   if (!settings) settings = await prisma.shopSettings.create({ data: { shop } });
   return json({ plan: settings.plan, settings });
@@ -126,12 +174,14 @@ export default function Pricing() {
                 <Text as="h2" variant="headingLg">Pro</Text>
                 {plan === 'PRO' ? <Badge tone="success">Current plan</Badge> : <Badge tone="new">Popular</Badge>}
               </InlineStack>
-              <Text as="p" variant="bodyMd">Advanced merchandising and analytics.</Text>
+              <Text as="p" variant="bodyMd">Advanced merchandising, customization, and analytics for growing stores.</Text>
               <List type="bullet">
                 <List.Item>Unlimited bundles & products</List.Item>
                 <List.Item>Tiered pricing rules</List.Item>
                 <List.Item>Gift wrap & gift card add-ons</List.Item>
-                <List.Item>3D carousel, themes, color customization</List.Item>
+                <List.Item>3D carousel styles, themes, and color customization</List.Item>
+                <List.Item>Hero bar editor (live preview in Theme Editor)</List.Item>
+                <List.Item>Hide Shopify products from storefront (GID-based) while staying purchasable in bundles/cart</List.Item>
               </List>
               {plan === 'PRO' ? (
                 <BlockStack gap="200">

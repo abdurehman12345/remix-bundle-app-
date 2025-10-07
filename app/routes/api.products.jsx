@@ -1,5 +1,7 @@
 import { json } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
+import { getHiddenHandlesForShop } from "../utils/hidden.server";
+import prisma from "../db.server";
 
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
@@ -7,6 +9,23 @@ export const loader = async ({ request }) => {
   const query = url.searchParams.get("q") || "";
   const collection = url.searchParams.get("collection") || "";
   const limit = Math.min(parseInt(url.searchParams.get("limit") || "20"), 50);
+
+  // Get shop domain for hidden product filtering
+  const shop = url.searchParams.get("shop") || null;
+  let hiddenHandles = new Set();
+  if (shop) {
+    try {
+      const session = await prisma.session.findFirst({ 
+        where: { shop }, 
+        orderBy: { expires: 'desc' } 
+      });
+      if (session?.accessToken) {
+        hiddenHandles = await getHiddenHandlesForShop(shop, session.accessToken);
+      }
+    } catch (error) {
+      console.log('Failed to get hidden handles:', error.message);
+    }
+  }
 
   try {
     let resp;
@@ -37,8 +56,19 @@ export const loader = async ({ request }) => {
       const data = await resp.json();
       const products = data?.data?.collection?.products?.nodes || [];
       
+      // Filter out hidden products server-side
+      const visibleProducts = products.filter(p => {
+        try {
+          // Extract handle from product ID (format: gid://shopify/Product/123456789)
+          const handle = p.id.split('/').pop();
+          return !hiddenHandles.has(handle);
+        } catch (_) {
+          return true; // If we can't determine handle, include the product
+        }
+      });
+
       return json({
-        products: products.map(p => ({
+        products: visibleProducts.map(p => ({
           id: p.id,
           title: p.title,
           imageUrl: p.featuredMedia?.preview?.image?.url,
@@ -97,8 +127,19 @@ export const loader = async ({ request }) => {
     const data = await resp.json();
     const products = data?.data?.products?.nodes || [];
 
+    // Filter out hidden products server-side
+    const visibleProducts = products.filter(p => {
+      try {
+        // Extract handle from product ID (format: gid://shopify/Product/123456789)
+        const handle = p.id.split('/').pop();
+        return !hiddenHandles.has(handle);
+      } catch (_) {
+        return true; // If we can't determine handle, include the product
+      }
+    });
+
     return json({
-      products: products.map(p => ({
+      products: visibleProducts.map(p => ({
         id: p.id,
         title: p.title,
         imageUrl: p.featuredMedia?.preview?.image?.url,

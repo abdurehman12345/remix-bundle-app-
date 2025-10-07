@@ -240,7 +240,7 @@ export const action = async ({ request, params }) => {
       return json({ error: "Name and image are required" }, { status: 400 });
     }
     await prisma.bundleCard.create({
-      data: { bundleId: bundle.id, name, imageUrl },
+      data: { bundleId: params.bundleId, name, imageUrl },
     });
     return redirect(`/app/bundles/${params.bundleId}`);
   }
@@ -305,10 +305,7 @@ export const action = async ({ request, params }) => {
 
     };
 
-    // Set bundleId if it doesn't exist
-    if (!bundle.bundleId) {
-      updateData.bundleId = `bundle_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    }
+    // Keep existing bundleId if present; do not modify here
 
     await prisma.bundle.update({
       where: { id: params.bundleId },

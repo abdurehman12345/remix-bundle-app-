@@ -105,7 +105,7 @@ Bundle App is a sophisticated Shopify application that enables merchants to crea
    ```bash
    # With Shopify CLI (recommended)
    npm run dev
-   
+
    # Or with tunnel
    npm run shopify:dev-fixed
    ```

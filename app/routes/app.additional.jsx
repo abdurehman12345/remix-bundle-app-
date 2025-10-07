@@ -1,5 +1,4 @@
 import {
-  Box,
   Card,
   Layout,
   Page,
@@ -13,7 +12,6 @@ import {
   Divider,
   Badge,
   Thumbnail,
-  ButtonGroup,
   Modal,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
@@ -93,7 +91,7 @@ export const action = async ({ request }) => {
       const productNumericId = String(productId).split('/').pop();
       
       // Test if the product exists by trying to fetch it
-      const productResp = await fetch(`https://${session.shop}/admin/api/2025-01/products/${productNumericId}.json`, {
+      const productResp = await fetch(`https://${session.shop}/admin/api/2024-10/products/${productNumericId}.json`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
       });
@@ -148,7 +146,7 @@ export const action = async ({ request }) => {
       console.log(`🔧 Ensuring single variant for product ${productNumericId} @ price ${price}`);
 
       // 1) Try to fetch existing variants first
-      const variantsResp = await fetch(`https://${session.shop}/admin/api/2025-01/products/${productNumericId}/variants.json`, {
+      const variantsResp = await fetch(`https://${session.shop}/admin/api/2024-10/products/${productNumericId}/variants.json`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
       });
@@ -159,7 +157,7 @@ export const action = async ({ request }) => {
         if (first?.id) {
           const variantId = first.id;
           // Update price/inventory of the existing default variant
-          const putResp = await fetch(`https://${session.shop}/admin/api/2025-01/variants/${variantId}.json`, {
+          const putResp = await fetch(`https://${session.shop}/admin/api/2024-10/variants/${variantId}.json`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
             body: JSON.stringify({ variant: { id: variantId, price, inventory_management: 'shopify', inventory_policy: 'continue', inventory_quantity: 999 } })
@@ -179,7 +177,7 @@ export const action = async ({ request }) => {
       }
 
       // 2) If no variants present, create exactly one
-      const createVariantResp = await fetch(`https://${session.shop}/admin/api/2025-01/products/${productNumericId}/variants.json`, {
+      const createVariantResp = await fetch(`https://${session.shop}/admin/api/2024-10/products/${productNumericId}/variants.json`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
         body: JSON.stringify({ variant: { option1: 'Default', price, inventory_management: 'shopify', inventory_policy: 'continue', inventory_quantity: 999, weight: 0.1, weight_unit: 'kg' } })
@@ -197,7 +195,7 @@ export const action = async ({ request }) => {
       }
 
       // 3) Last chance: re-read variants and return first if any appeared
-      const reread = await fetch(`https://${session.shop}/admin/api/2025-01/products/${productNumericId}/variants.json`, {
+      const reread = await fetch(`https://${session.shop}/admin/api/2024-10/products/${productNumericId}/variants.json`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
       });
@@ -302,7 +300,7 @@ export const action = async ({ request }) => {
       // REST fallback if GraphQL failed to create
       if (!shopifyProductId) {
         try {
-          const restResp = await fetch(`https://${session.shop}/admin/api/2025-01/products.json`, {
+          const restResp = await fetch(`https://${session.shop}/admin/api/2024-10/products.json`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
             body: JSON.stringify({ product: { title, status: 'draft', body_html: `Hidden bundle wrap: ${name}` } })
@@ -346,7 +344,7 @@ export const action = async ({ request }) => {
         } catch(_) {
           try {
             const productNumericId = shopifyProductId.split('/').pop();
-            await fetch(`https://${session.shop}/admin/api/2025-01/products/${productNumericId}/images.json`, {
+            await fetch(`https://${session.shop}/admin/api/2024-10/products/${productNumericId}/images.json`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
               body: JSON.stringify({ image: { src: hostedUrl } })
@@ -397,7 +395,7 @@ export const action = async ({ request }) => {
 
       if (!shopifyProductId) {
         try {
-          const restResp = await fetch(`https://${session.shop}/admin/api/2025-01/products.json`, {
+          const restResp = await fetch(`https://${session.shop}/admin/api/2024-10/products.json`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
             body: JSON.stringify({ product: { title, status: 'draft', body_html: `Hidden bundle card: ${name}` } })
@@ -434,7 +432,7 @@ export const action = async ({ request }) => {
         } catch(_) {
           try {
             const productNumericId = shopifyProductId.split('/').pop();
-            await fetch(`https://${session.shop}/admin/api/2025-01/products/${productNumericId}/images.json`, {
+            await fetch(`https://${session.shop}/admin/api/2024-10/products/${productNumericId}/images.json`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
               body: JSON.stringify({ image: { src: hostedUrl } })
@@ -676,7 +674,7 @@ export const action = async ({ request }) => {
           
           // Use REST API to verify the variant exists
           const productNumericId = String(validProductId).split('/').pop();
-          const variantsResp = await fetch(`https://${session.shop}/admin/api/2025-01/products/${productNumericId}/variants.json`, {
+          const variantsResp = await fetch(`https://${session.shop}/admin/api/2024-10/products/${productNumericId}/variants.json`, {
             method: 'GET',
             headers: { 
               'Content-Type': 'application/json', 
@@ -749,7 +747,7 @@ export const action = async ({ request }) => {
           
           // Use REST API to verify the variant exists
           const productNumericId = String(validProductId).split('/').pop();
-          const variantsResp = await fetch(`https://${session.shop}/admin/api/2025-01/products/${productNumericId}/variants.json`, {
+          const variantsResp = await fetch(`https://${session.shop}/admin/api/2024-10/products/${productNumericId}/variants.json`, {
             method: 'GET',
             headers: { 
               'Content-Type': 'application/json', 
@@ -819,7 +817,7 @@ export const action = async ({ request }) => {
           const price = ((wrap.priceCents || 0) / 100).toFixed(2);
           
           // Create a new variant
-          const createVariantResp = await fetch(`https://${session.shop}/admin/api/2025-01/products/${productId}/variants.json`, {
+          const createVariantResp = await fetch(`https://${session.shop}/admin/api/2024-10/products/${productId}/variants.json`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
             body: JSON.stringify({ 
@@ -857,7 +855,7 @@ export const action = async ({ request }) => {
           const price = ((card.priceCents || 0) / 100).toFixed(2);
           
           // Create a new variant
-          const createVariantResp = await fetch(`https://${session.shop}/admin/api/2025-01/products/${productId}/variants.json`, {
+          const createVariantResp = await fetch(`https://${session.shop}/admin/api/2024-10/products/${productId}/variants.json`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
             body: JSON.stringify({ 
@@ -893,7 +891,7 @@ export const action = async ({ request }) => {
   if (intent === "test-api-connection") {
     // Test basic Shopify REST API connection
     try {
-      const testResp = await fetch(`https://${session.shop}/admin/api/2025-01/products.json?limit=1`, {
+      const testResp = await fetch(`https://${session.shop}/admin/api/2024-10/products.json?limit=1`, {
         method: 'GET',
         headers: { 
           'Content-Type': 'application/json', 
@@ -925,7 +923,7 @@ export const action = async ({ request }) => {
       const { session } = await authenticate.admin(request);
       if (wrap?.shopifyProductId) {
         const productNumericId = String(wrap.shopifyProductId).split('/').pop();
-        await fetch(`https://${session.shop}/admin/api/2025-01/products/${productNumericId}.json`, {
+        await fetch(`https://${session.shop}/admin/api/2024-10/products/${productNumericId}.json`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
         });
@@ -943,7 +941,7 @@ export const action = async ({ request }) => {
       const { session } = await authenticate.admin(request);
       if (card?.shopifyProductId) {
         const productNumericId = String(card.shopifyProductId).split('/').pop();
-        await fetch(`https://${session.shop}/admin/api/2025-01/products/${productNumericId}.json`, {
+        await fetch(`https://${session.shop}/admin/api/2024-10/products/${productNumericId}.json`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
         });
@@ -1135,7 +1133,7 @@ export const action = async ({ request }) => {
         if (w.shopifyProductId) {
           try {
             const productNumericId = String(w.shopifyProductId).split('/').pop();
-            const del = await fetch(`https://${session.shop}/admin/api/2025-01/products/${productNumericId}.json`, {
+            const del = await fetch(`https://${session.shop}/admin/api/2024-10/products/${productNumericId}.json`, {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
             });
@@ -1154,7 +1152,7 @@ export const action = async ({ request }) => {
         if (c.shopifyProductId) {
           try {
             const productNumericId = String(c.shopifyProductId).split('/').pop();
-            const del = await fetch(`https://${session.shop}/admin/api/2025-01/products/${productNumericId}.json`, {
+            const del = await fetch(`https://${session.shop}/admin/api/2024-10/products/${productNumericId}.json`, {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
             });
@@ -1183,23 +1181,7 @@ export default function AdditionalPage() {
   const bundle = data?.bundle;
   const plan = data?.plan || 'FREE';
 
-  if (!bundle) {
-    return (
-      <Page>
-        <TitleBar title="Manage assets" />
-        <Layout>
-          <Layout.Section>
-            <Card>
-              <BlockStack gap="300">
-                <Text variant="bodyMd">Bundle not found or no bundleId provided.</Text>
-                <Button url="/app/bundle-manager">Back to Bundle Manager</Button>
-              </BlockStack>
-            </Card>
-          </Layout.Section>
-        </Layout>
-      </Page>
-    );
-  }
+  const bundleMissing = !bundle;
 
   const [bundleImageUrl, setBundleImageUrl] = useState(bundle?.imageUrl || "");
   const [wrapName, setWrapName] = useState("");
@@ -1254,6 +1236,16 @@ export default function AdditionalPage() {
     <Page>
       <TitleBar title={`Bundle Assets: ${bundle.title}`} />
       <Layout>
+        {bundleMissing ? (
+          <Layout.Section>
+            <Card>
+              <BlockStack gap="300">
+                <Text variant="bodyMd">Bundle not found or no bundleId provided.</Text>
+                <Button url="/app/bundle-manager">Back to Bundle Manager</Button>
+              </BlockStack>
+            </Card>
+          </Layout.Section>
+        ) : null}
         {/* Utilities */}
         <Layout.Section>
           <Card>

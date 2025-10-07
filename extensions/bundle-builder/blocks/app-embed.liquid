@@ -1,28 +1,409 @@
-<script src="{{ 'hide-hidden-addons.js' | asset_url }}" defer></script>
+{%- comment -%}
+App Embed: Hide Hidden Add-ons (synchronous pre-paint + dynamic)
+- Purpose: Prevent products tagged as add-ons from ever painting on storefront pages
+- Behaviors:
+  1) CSS pre-hide guard for tag/handle attributes
+  2) Inline early JS: preload handles from app-proxy and inject handle-specific CSS
+  3) Inline synchronous DOM pass to remove/hide nodes before paint
+  4) MutationObserver for dynamic content
+  5) Fallback deferred external script (hide-hidden-addons.js) for extra resiliency
+{%- endcomment -%}
 
+{%- assign default_tags = "hidden_addon,hidden-product,hidden_product,bundle-addon,bundle_addon" -%}
+
+{%- comment -%}
+Merchant-configurable settings (kept same keys used in your theme editor)
+- block.settings.custom_tags (string csv)
+- block.settings.product_selector
+- block.settings.tags_attr
+- block.settings.debug (boolean)
+{%- endcomment -%}
+
+<style id="bb-hide-prepaint">
+/* CSS pre-hide any product card that carries hidden tags or handles.
+   This is an early "paint guard" — keeps browser from painting known markup */
+[data-product-tags*="hidden_addon"],
+[data-product-tags*="hidden-product"],
+[data-product-tags*="hidden_product"],
+[data-product-tags*="bundle-addon"],
+[data-product-tags*="bundle_addon"],
+.card--product[data-product-tags*="hidden_addon"],
+.card--product[data-product-tags*="hidden-product"],
+.card--product[data-product-tags*="hidden_product"],
+.card--product[data-product-tags*="bundle-addon"],
+.card--product[data-product-tags*="bundle_addon"],
+.product-card[data-product-tags*="hidden_addon"],
+.product-card[data-product-tags*="hidden-product"],
+.product-card[data-product-tags*="hidden_product"],
+.product-card[data-product-tags*="bundle-addon"],
+.product-card[data-product-tags*="bundle_addon"],
+.grid__item[data-product-tags*="hidden_addon"],
+.grid__item[data-product-tags*="hidden-product"],
+.grid__item[data-product-tags*="hidden_product"],
+.grid__item[data-product-tags*="bundle-addon"],
+.grid__item[data-product-tags*="bundle_addon"],
+[data-product-handle*="hidden_addon"],
+[data-product-handle*="hidden-product"],
+[data-product-handle*="hidden_product"],
+[data-product-handle*="bundle-addon"],
+[data-product-handle*="bundle_addon"] {
+  display: none !important;
+  visibility: hidden !important;
+}
+</style>
+
+<script>
+/* Inline prepaint + dynamic hide script
+   Runs synchronously in head so we remove nodes before they produce a visible flash.
+   Safe: wrapped in try/catch; preserves cart/bundle UI elements.
+*/
+(function(){
+  'use strict';
+
+  // Disabled legacy bb-hide logic in favor of GID-based hiding
+  return;
+
+  // Configuration from theme block settings (liquid values inlined)
+  var MERCHANT_TAGS_CSV = {{ block.settings.custom_tags | default: default_tags | json }};
+  var PRODUCT_SELECTOR = {{ block.settings.product_selector | default: "[data-product-card], .card--product, .grid__item, [data-product-id]" | json }};
+  var TAGS_ATTR = {{ block.settings.tags_attr | default: "data-product-tags" | json }};
+  var DEBUG = {{ block.settings.debug | default: false | json }};
+
+  function log() { if (DEBUG) try { console.log.apply(console, ['[bb-hide]'].concat(Array.prototype.slice.call(arguments))); } catch(_) {} }
+
+  // Build canonical hidden tags list (defaults + merchant-provided)
+  var DEFAULT_TAGS = ['hidden_addon','hidden-product','hidden_product','bundle-addon','bundle_addon'];
+  var customTags = String(MERCHANT_TAGS_CSV || '').split(',').map(function(t){ return String(t||'').trim().toLowerCase(); }).filter(Boolean);
+  var HIDDEN_TAGS = Array.from(new Set(DEFAULT_TAGS.concat(customTags)));
+
+  // Expose for debugging & other scripts
+  try {
+    window.__HIDDEN_ADDONS = window.__HIDDEN_ADDONS || new Set();
+    window.__HIDDEN_ADDONS_LOADED = !!(window.__HIDDEN_ADDONS && window.__HIDDEN_ADDONS.size);
+  } catch (e) { /* ignore */ }
+
+  // Utility: safe parent check for exceptions (cart area or bundle UI)
+  function isExceptionNode(node){
+    if (!node || !node.closest) return false;
+    return !!node.closest('[data-cart], .cart-drawer, .bb__bundle-card, .bb__bundle-wraps, .bb__bundle-cards');
+  }
+
+  // Remove a node or hide it as fallback
+  function removeNode(node){
+    if (!node) return;
+    try { node.remove(); log('removed node', node); return; } catch(_) {}
+    try { node.style.setProperty('display','none','important'); node.style.setProperty('visibility','hidden','important'); } catch(_) {}
+  }
+
+  // Synchronous DOM pass — remove any nodes that carry matching tags/handles attributes
+  function hidePrepaintNodes(root){
+    try {
+      var baseSelector = (typeof PRODUCT_SELECTOR === 'string' && PRODUCT_SELECTOR.trim()) ? PRODUCT_SELECTOR : '[data-product-card], .card--product, .grid__item, [data-product-id]';
+      var sel = baseSelector + ', [data-product-handle], [' + TAGS_ATTR + ']';
+      var rootEl = (root && typeof root.querySelectorAll === 'function') ? root : document;
+      var nodes = rootEl.querySelectorAll(sel);
+      if (!nodes || !nodes.length) return 0;
+      var removed = 0;
+      for (var i = 0; i < nodes.length; i++){
+        var n = nodes[i];
+        if (isExceptionNode(n)) continue;
+        // fast attribute-based tags
+        var tagAttr = (n.getAttribute && n.getAttribute(TAGS_ATTR)) || '';
+        if (tagAttr && tagAttr.toLowerCase && HIDDEN_TAGS.some(function(t){ return tagAttr.toLowerCase().indexOf(t) !== -1; })){
+          removeNode(n); removed++; continue;
+        }
+        // handle attribute check
+        var handleAttr = (n.getAttribute && (n.getAttribute('data-product-handle') || n.getAttribute('data-handle'))) || '';
+        if (handleAttr && handleAttr.toLowerCase && HIDDEN_TAGS.some(function(t){ return handleAttr.toLowerCase().indexOf(t) !== -1; })){
+          removeNode(n); removed++; continue;
+        }
+        // if anchor link present check href for handle tokens like /products/<handle>
+        try {
+          var a = n.querySelector && n.querySelector('a[href*="/products/"]') || (n.tagName === 'A' && n.href && n.href.indexOf('/products/') !== -1 ? n : null);
+          if (a && a.getAttribute) {
+            var href = a.getAttribute('href') || '';
+            for (var j=0;j<HIDDEN_TAGS.length;j++){
+              var t = HIDDEN_TAGS[j];
+              if (href.indexOf('/products/'+t) !== -1) { removeNode(n); removed++; break; }
+            }
+          }
+        } catch (_) {}
+      }
+      if (removed) log('prepaint removed', removed, 'nodes');
+      return removed;
+    } catch (e) { log('hidePrepaintNodes error', e); return 0; }
+  }
+
+  // Fetch hidden handles via app-proxy early and inject handle-targeted CSS
+  function preloadHiddenHandles(){
+    try {
+      var shop = (window.Shopify && Shopify.shop) || {{ shop.permanent_domain | json }};
+      if (!shop) { log('no shop'); return Promise.resolve(null); }
+      var endpoint = '/apps/hidden-products?shop=' + encodeURIComponent(shop);
+      return fetch(endpoint, { credentials: 'omit', cache: 'no-store', mode: 'cors' })
+        .then(function(res){
+          if (!res || !res.ok) throw new Error('no-data');
+          var ct = (res.headers && res.headers.get && res.headers.get('content-type')) || '';
+          if (ct.indexOf('application/json') === -1) throw new Error('non-json');
+          return res.json();
+        })
+        .then(function(json){
+          if (!json || !Array.isArray(json.handles)) return null;
+          try {
+            window.__HIDDEN_ADDONS = new Set(json.handles.filter(Boolean).map(function(h){ return String(h||'').trim(); }));
+            window.__HIDDEN_ADDONS_LOADED = true;
+          } catch(_) {}
+          // Build CSS to hide common containers that reference the handle in anchor href
+          try {
+            var css = '';
+            json.handles.forEach(function(h){
+              if (!h) return;
+              // escape any regex chars for safe selector building
+              var esc = String(h).replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+              // match common anchor hrefs & their immediate container nodes
+              css += 'a[href*="/products/' + esc + '"], a[href*="/products/' + esc + '"] .card--product, a[href*="/products/' + esc + '"] .product-card, a[href*="/products/' + esc + '"] .grid__item { display: none !important; visibility: hidden !important; }\n';
+            });
+            if (css) {
+              var id = 'bb-hidden-handles';
+              var styleEl = document.getElementById(id);
+              if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = id;
+                (document.head || document.documentElement).appendChild(styleEl);
+              }
+              styleEl.textContent = css + (styleEl.textContent || '');
+            }
+          } catch(_) {}
+          log('preloaded handles count', (window.__HIDDEN_ADDONS && window.__HIDDEN_ADDONS.size) || 0);
+          return window.__HIDDEN_ADDONS;
+        })
+        .catch(function(err){ log('preloadHiddenHandles failed', (err && err.message) || 'unknown'); return null; });
+    } catch (e) { log('preloadHiddenHandles exception', e); return Promise.resolve(null); }
+  }
+
+  // After preload we also remove/hide any nodes referencing known handles
+  function hideNodesByHandleSet(){
+    try {
+      if (!window.__HIDDEN_ADDONS || !(window.__HIDDEN_ADDONS instanceof Set) || window.__HIDDEN_ADDONS.size === 0) return 0;
+      var removed = 0;
+      // check anchors and containers
+      var anchors = document.querySelectorAll('a[href*="/products/"]');
+      anchors && anchors.forEach && anchors.forEach(function(a){
+        try {
+          if (isExceptionNode(a)) return;
+          var href = a.getAttribute('href') || '';
+          window.__HIDDEN_ADDONS.forEach(function(h){
+            if (href.indexOf('/products/' + h) !== -1) {
+              // prefer to remove the nearest product card container if present
+              var container = a.closest(PRODUCT_SELECTOR) || a.closest('.card--product') || a.closest('.product-card') || a.closest('.grid__item') || a;
+              if (container) { removeNode(container); removed++; }
+            }
+          });
+        } catch(_) {}
+      });
+      if (removed) log('removed by handle set', removed);
+      return removed;
+    } catch (e) { log('hideNodesByHandleSet error', e); return 0; }
+  }
+
+  // MutationObserver for dynamic content - remove nodes as soon as they appear
+  function installMutationObserver(){
+    try {
+      var obs = new MutationObserver(function(muts){
+        // quick scan: when nodes are added, run the synchronous pass on the subtree
+        muts.forEach(function(m){
+          if (!m.addedNodes || !m.addedNodes.length) return;
+          for (var i=0;i<m.addedNodes.length;i++){
+            var n = m.addedNodes[i];
+            if (!n) continue;
+            // Skip non-element nodes to avoid calling querySelectorAll on text/comment
+            var isElement = (n.nodeType === 1) || (n.nodeType === 11); // ELEMENT_NODE or DOCUMENT_FRAGMENT_NODE
+            // If a node itself matches or contains matching nodes, hide in that subtree
+            try {
+              hidePrepaintNodes(isElement ? n : document);
+              // check anchors if we have handle set
+              if (window.__HIDDEN_ADDONS_LOADED) hideNodesByHandleSet();
+            } catch(_) {}
+          }
+        });
+      });
+      obs.observe(document.documentElement || document, { childList: true, subtree: true, attributes: false });
+      // store for debugging if needed
+      window.__BB_ADDON_OBSERVER = obs;
+      log('mutation observer installed');
+    } catch (e) { log('observer install failed', e); }
+  }
+
+  // Run initialization: prepaint removal, preload handles + additional removal, observer
+  try {
+    // 1) Do a synchronous DOM pass right away (this runs before many frameworks render)
+    hidePrepaintNodes(document);
+
+    // 2) Preload handles and inject handle CSS, then hide by handles
+    preloadHiddenHandles().then(function(){
+      try { hideNodesByHandleSet(); } catch(_) {}
+    });
+
+    // 3) Ensure we observe later incoming DOM changes
+    installMutationObserver();
+
+    // 4) A final scheduled pass shortly after load to catch late rendering patterns
+    setTimeout(function(){ try { hidePrepaintNodes(document); hideNodesByHandleSet(); } catch(_) {} }, 250);
+    setTimeout(function(){ try { hidePrepaintNodes(document); hideNodesByHandleSet(); } catch(_) {} }, 1000);
+
+  } catch (e) { log('init failed', e); }
+
+  // Expose a simple API for debugging and manual invocation
+  window.bbHideAddons = {
+    hidePrepaintNodes: hidePrepaintNodes,
+    preloadHiddenHandles: preloadHiddenHandles,
+    hideNodesByHandleSet: hideNodesByHandleSet,
+    installMutationObserver: installMutationObserver,
+    config: { hiddenTags: HIDDEN_TAGS, selector: PRODUCT_SELECTOR, tagsAttr: TAGS_ATTR }
+  };
+
+})();
+</script>
+
+{%- comment -%}
+Theme editor-only persist button: posts selected product GIDs to /apps/hidden-products
+PRO plan only - FREE plan users cannot save hidden products
+{%- endcomment -%}
+<script>
+(function(){
+  try {
+    // Only render in theme editor (Shopify design mode exposes parameter in URL)
+    var inEditor = false;
+    try { inEditor = /[?&]design_mode=1(&|$)/.test(location.search); } catch(_) {}
+    if (!inEditor) return;
+
+    var selectedGids = {{ block.settings.hidden_products | map: 'id' | json }} || [];
+    var shouldPersist = {{ block.settings.persist_hidden | default: false | json }};
+    if (!shouldPersist) return;
+
+    // Check if user has PRO plan before showing save button
+    var shopDom = (window.Shopify && Shopify.shop) || {{ shop.permanent_domain | json }};
+    var hasProPlan = false;
+    
+    if (shopDom) {
+      fetch('/apps/hidden-products?shop=' + encodeURIComponent(shopDom), { credentials: 'omit', cache: 'no-store' })
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(j){
+          try {
+            if (j && j.plan === 'PRO') {
+              hasProPlan = true;
+              createSaveButton();
+            }
+          } catch(_) {}
+        })
+        .catch(function(){});
+    }
+
+    function createSaveButton() {
+      // Create a minimal fixed button in the editor UI
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = 'Save hidden products (PRO)';
+      btn.style.position = 'fixed';
+      btn.style.bottom = '16px';
+      btn.style.right = '16px';
+      btn.style.zIndex = '2147483647';
+      btn.style.padding = '10px 14px';
+      btn.style.background = '#111827';
+      btn.style.color = '#fff';
+      btn.style.border = 'none';
+      btn.style.borderRadius = '6px';
+      btn.style.cursor = 'pointer';
+      btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+
+      var saving = false;
+      btn.addEventListener('click', function(){
+        if (saving) return;
+        saving = true;
+        btn.textContent = 'Saving...';
+        try {
+          var url = '/apps/hidden-products?shop=' + encodeURIComponent(shopDom);
+          fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productGids: selectedGids })
+          }).then(function(r){ return r.json().catch(function(){ return null; }); })
+            .then(function(j){
+              if (j && j.ok) {
+                btn.textContent = 'Saved!';
+              } else if (j && j.error && j.error.includes('PRO plan required')) {
+                btn.textContent = 'PRO plan required';
+                btn.style.background = '#dc2626';
+              } else {
+                btn.textContent = 'Save failed';
+              }
+              setTimeout(function(){ 
+                btn.textContent = 'Save hidden products (PRO)'; 
+                btn.style.background = '#111827';
+                saving = false; 
+              }, 1200);
+            })
+            .catch(function(){ 
+              btn.textContent = 'Save failed'; 
+              setTimeout(function(){ 
+                btn.textContent = 'Save hidden products (PRO)'; 
+                saving = false; 
+              }, 1200); 
+            });
+        } catch(_){ 
+          saving = false; 
+          btn.textContent = 'Save failed'; 
+          setTimeout(function(){ btn.textContent = 'Save hidden products (PRO)'; }, 1200); 
+        }
+      });
+
+      (document.body || document.documentElement).appendChild(btn);
+    }
+  } catch(_) {}
+})();
+</script>
+
+{%- comment -%}
+Keep external script as deferred fallback (feature parity / future updates).
+The inline logic handles immediate hiding. External script may contain the same logic
+or more advanced heuristics and will run later.
+{%- endcomment -%}
+ {%- comment -%} legacy external script disabled {%- endcomment -%}
+ {%- comment -%} legacy external script disabled {%- endcomment -%}
+
+{%- comment -%}
+Block settings schema - preserved so merchant can customize tags, selectors, debug from Theme Editor
+{%- endcomment -%}
+{%- comment -%}
+Schema for the app embed (single schema block)
+{%- endcomment -%}
+{%- comment -%}
+Primary schema block
+{%- endcomment -%}
 {% schema %}
 {
   "name": "Hide Hidden Add-ons",
-  "target": "body",
+  "target": "head",
   "javascript": "hide-hidden-addons.js",
   "settings": [
+    
     {
-      "type": "text",
-      "id": "product_selector",
-      "label": "Product card selector",
-      "default": "[data-product-card], .card--product, .grid__item, [data-product-id], .product-item, .product-card, .product, .product-block, [data-product], .product-grid-item, .product-list-item, .collection-item, .search-item"
-    },
-    {
-      "type": "text",
-      "id": "tags_attr",
-      "label": "Attribute containing tags (comma-separated)",
-      "default": "data-product-tags"
+      "type": "product_list",
+      "id": "hidden_products",
+      "label": "Products to hide (PRO only)",
+      "limit": 50,
+      "info": "PRO plan only. Selected products will be hidden across the storefront (except in bundles and cart)."
     },
     {
       "type": "checkbox",
-      "id": "debug",
-      "label": "Enable debug logging",
-      "default": false
+      "id": "persist_hidden",
+      "label": "Persist selection (PRO only)",
+      "default": false,
+      "info": "PRO plan only. Save hidden products to app settings."
+    },
+    {
+      "type": "header",
+      "content": "Hidden products (PRO plan only)"
     }
   ],
   "enabled_on": {
@@ -33,9 +414,128 @@
 
 <div
   data-addons-config
+  data-custom-tags="{{ block.settings.custom_tags | default: default_tags }}"
   data-product-selector="{{ block.settings.product_selector | escape }}"
   data-tags-attr="{{ block.settings.tags_attr | escape }}"
   data-debug="{{ block.settings.debug }}"
 ></div>
 
+{%- comment -%}
+App Embed: Hide Hidden Add-ons Automatically Everywhere Products Are Rendered
+{%- endcomment -%}
 
+<style id="hide-prepaint">
+/* CSS pre-hide any product card with matching tags */
+[data-product-tags*="hidden_addon"],
+[data-product-tags*="hidden-product"],
+[data-product-tags*="hidden_product"],
+[data-product-tags*="bundle-addon"],
+[data-product-tags*="bundle_addon"],
+.card--product[data-product-tags*="hidden_addon"],
+.card--product[data-product-tags*="hidden-product"],
+.card--product[data-product-tags*="hidden_product"],
+.card--product[data-product-tags*="bundle-addon"],
+.card--product[data-product-tags*="bundle_addon"],
+.product-card[data-product-tags*="hidden_addon"],
+.product-card[data-product-tags*="hidden-product"],
+.product-card[data-product-tags*="hidden_product"],
+.product-card[data-product-tags*="bundle-addon"],
+.product-card[data-product-tags*="bundle_addon"],
+.grid__item[data-product-tags*="hidden_addon"],
+.grid__item[data-product-tags*="hidden-product"],
+.grid__item[data-product-tags*="hidden_product"],
+.grid__item[data-product-tags*="bundle-addon"],
+.grid__item[data-product-tags*="bundle_addon"],
+[data-product-handle*="hidden_addon"],
+[data-product-handle*="hidden-product"],
+[data-product-handle*="hidden_product"],
+[data-product-handle*="bundle-addon"],
+[data-product-handle*="bundle_addon"] {
+  display: none !important;
+  visibility: hidden !important;
+}
+</style>
+
+{%- comment -%}
+Hide by explicit product selection (from app embed settings)
+This runs very early and hides any nodes that advertise a matching data-product-id.
+Safe-guards: does not hide within cart UI or bundle UI containers.
+PRO plan only - FREE plan users cannot hide products.
+{%- endcomment -%}
+<script>
+(function(){
+  try {
+    var selectedGids = {{ block.settings.hidden_products | map: 'id' | json }} || [];
+    var shopPlan = 'FREE'; // Default to FREE, will be updated from app proxy
+    var hiddenProductIDs = [];
+    
+    // Build numeric product IDs from GIDs like gid://shopify/Product/1234567890
+    function buildNumericIds(gids){
+      var out = [];
+      for (var i=0;i<gids.length;i++){
+        var g = gids[i];
+        if (!g) continue;
+        var s = String(g);
+        var m = s.match(/\/(\d+)(?:\D*)$/);
+        if (m && m[1]) {
+          var n = parseInt(m[1], 10);
+          if (!isNaN(n)) out.push(n);
+        } else {
+          var maybe = parseInt(s, 10);
+          if (!isNaN(maybe)) out.push(maybe);
+        }
+      }
+      return out;
+    }
+
+    function hideProductsByID(root){
+      try {
+        console.log('[Hide Products by ID] Script initialized');
+        var scope = (root && root.querySelectorAll) ? root : document;
+        var cards = scope.querySelectorAll('[data-product-id]');
+        if (!cards || !cards.length) return;
+        for (var i=0;i<cards.length;i++){
+          var card = cards[i];
+          var pid = parseInt(card.getAttribute('data-product-id'), 10);
+          if (!isNaN(pid) && hiddenProductIDs.indexOf(pid) !== -1){
+            try{ card.style.setProperty('display','none','important'); }catch(_){ }
+            try{ console.log('[Hide Products by ID] Hidden product ID:', pid); }catch(_){ }
+          }
+        }
+      } catch(_) {}
+    }
+
+    // Check plan from app proxy - only PRO users can hide products
+    var shopDom = (window.Shopify && Shopify.shop) || {{ shop.permanent_domain | json }};
+    if (shopDom) {
+      fetch('/apps/hidden-products?shop=' + encodeURIComponent(shopDom), { credentials: 'omit', cache: 'no-store' })
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(j){
+          try {
+            if (j && j.plan) shopPlan = j.plan;
+            // Only proceed with hiding if PRO plan
+            if (shopPlan === 'PRO') {
+              var savedGids = Array.isArray(j.savedProductGids) ? j.savedProductGids.filter(Boolean) : [];
+              var allGids = selectedGids.concat(savedGids);
+              hiddenProductIDs = buildNumericIds(allGids);
+              hideProductsByID(document);
+            }
+          } catch(_) {}
+        })
+        .catch(function(){});
+    }
+    
+    // Also run immediately with selected GIDs for PRO users (fallback)
+    if (selectedGids.length > 0) {
+      hiddenProductIDs = buildNumericIds(selectedGids);
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function(){ hideProductsByID(document); });
+      } else {
+        hideProductsByID(document);
+      }
+    }
+  } catch(_) {}
+})();
+</script>
+
+<!-- legacy handle-based scripts removed per GID-based logic -->

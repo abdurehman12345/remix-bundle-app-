@@ -194,13 +194,13 @@ export const action = async ({ request, params }) => {
       collectionId,
       minItems,
       maxItems,
-      allowMessage,
+      // allowMessage,
       allowCardUpload,
       status,
       type,
       wrapRequired,
-      messageCharLimit,
-      personalizationFeeCents
+      // messageCharLimit,
+      // personalizationFeeCents
     });
 
     await prisma.bundle.update({
@@ -343,7 +343,7 @@ export const action = async ({ request, params }) => {
       const wrap = await prisma.wrappingOption.findUnique({ where: { id } });
       if (wrap?.shopifyProductId) {
         const productNumericId = String(wrap.shopifyProductId).split('/').pop();
-        await fetch(`https://${session.shop}/admin/api/2025-01/products/${productNumericId}.json`, {
+        await fetch(`https://${session.shop}/admin/api/2024-10/products/${productNumericId}.json`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
         });
@@ -373,7 +373,7 @@ export const action = async ({ request, params }) => {
       const card = await prisma.bundleCard.findUnique({ where: { id } });
       if (card?.shopifyProductId) {
         const productNumericId = String(card.shopifyProductId).split('/').pop();
-        await fetch(`https://${session.shop}/admin/api/2025-01/products/${productNumericId}.json`, {
+        await fetch(`https://${session.shop}/admin/api/2024-10/products/${productNumericId}.json`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': session.accessToken },
         });

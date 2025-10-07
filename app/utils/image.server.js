@@ -42,7 +42,7 @@ export function extractFilename(url) {
   if (!url) return null;
   
   const urlString = String(url).trim();
-  const match = urlString.match(/([^\/]+)$/);
+  const match = urlString.match(/([^/]+)$/);
   return match ? match[1] : null;
 }
 

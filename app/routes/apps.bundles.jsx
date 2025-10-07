@@ -106,16 +106,15 @@ export const loader = async ({ request }) => {
       if (shop) {
         const s = await prisma.shopSettings.findUnique({ where: { shop } });
         plan = s?.plan || 'FREE';
-        if (s && s.plan === 'PRO') {
-          hero = {
-            enabled: s.heroEnabled ?? true,
-            title: s.heroTitle || 'Premium Collection',
-            subtitle: s.heroSubtitle || 'Special bundles curated with care for our customers.',
-            emoji: s.heroEmoji || '🎁',
-            colorStart: s.heroColorStart || '#6366f1',
-            colorEnd: s.heroColorEnd || '#8b5cf6',
-          };
-        }
+        // Always return saved hero settings, regardless of plan, so storefront reflects persisted values
+        hero = {
+          enabled: s?.heroEnabled ?? true,
+          title: s?.heroTitle || 'Premium Collection',
+          subtitle: s?.heroSubtitle || 'Special bundles curated with care for our customers.',
+          emoji: s?.heroEmoji || '🎁',
+          colorStart: s?.heroColorStart || '#6366f1',
+          colorEnd: s?.heroColorEnd || '#8b5cf6',
+        };
         // Load carousel settings from languageJson.carousel if present
         try {
           const payload = s?.languageJson ? JSON.parse(s.languageJson) : null;
