@@ -1,7 +1,6 @@
 import { json } from "@remix-run/node";
 import prisma from "../db.server";
 import { authenticate } from "../shopify.server";
-import { getHiddenHandlesForShop, isHiddenTagMatch } from "../utils/hidden.server";
 
 // Local minimal helpers to avoid importing server-only modules into client graph
 function buildCorsHeaders(request, extra = {}) {
@@ -225,6 +224,7 @@ export const loader = async ({ request, params }) => {
         // Pre-compute hidden handles via REST (cached 5 minutes) so we exclude hidden add-ons server-side
         let hiddenHandles = new Set();
         try {
+          const { getHiddenHandlesForShop } = await import("../utils/hidden.server.js");
           const url4 = new URL(request.url);
           const shop4 = url4.searchParams.get('shop') || null;
           if (shop4) {
