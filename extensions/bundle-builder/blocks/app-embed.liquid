@@ -6,7 +6,6 @@ App Embed: Hide Hidden Add-ons (synchronous pre-paint + dynamic)
   2) Inline early JS: preload handles from app-proxy and inject handle-specific CSS
   3) Inline synchronous DOM pass to remove/hide nodes before paint
   4) MutationObserver for dynamic content
-  5) Fallback deferred external script (hide-hidden-addons.js) for extra resiliency
 {%- endcomment -%}
 
 {%- assign default_tags = "hidden_addon,hidden-product,hidden_product,bundle-addon,bundle_addon" -%}
@@ -363,13 +362,6 @@ PRO plan only - FREE plan users cannot save hidden products
 })();
 </script>
 
-{%- comment -%}
-Keep external script as deferred fallback (feature parity / future updates).
-The inline logic handles immediate hiding. External script may contain the same logic
-or more advanced heuristics and will run later.
-{%- endcomment -%}
- {%- comment -%} legacy external script disabled {%- endcomment -%}
- {%- comment -%} legacy external script disabled {%- endcomment -%}
 
 {%- comment -%}
 Block settings schema - preserved so merchant can customize tags, selectors, debug from Theme Editor
@@ -384,7 +376,6 @@ Primary schema block
 {
   "name": "Hide Hidden Add-ons",
   "target": "head",
-  "javascript": "hide-hidden-addons.js",
   "settings": [
     
     {
