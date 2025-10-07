@@ -63,7 +63,7 @@ export async function loader({ request }) {
     // Fetch active bundles for the shop (adjust fields/filters as needed)
     const rows = await prisma.bundle.findMany({
       where: { shop, status: "ACTIVE" },
-      include: { products: true, wrappingOptions: true, cards: true },
+      include: { BundleProduct: true, WrappingOption: true, BundleCard: true },
       orderBy: { createdAt: "desc" },
     });
 

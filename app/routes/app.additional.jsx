@@ -31,7 +31,7 @@ export const loader = async ({ request }) => {
   }
   const bundle = await prisma.bundle.findUnique({
     where: { id: bundleId },
-    include: { products: true, wrappingOptions: true, cards: true },
+    include: { BundleProduct: true, WrappingOption: true, BundleCard: true },
   });
   if (!bundle) return json({ error: "Not found" }, { status: 404 });
   const plan = await getPlan(prisma, session.shop);
@@ -457,11 +457,11 @@ export const action = async ({ request }) => {
 
     const bundle = await prisma.bundle.findUnique({
       where: { id: bundleId },
-      include: { wrappingOptions: true, cards: true }
+      include: { WrappingOption: true, BundleCard: true }
     });
     if (!bundle) return json({ error: "Bundle not found" }, { status: 404 });
 
-    for (const w of bundle.wrappingOptions) {
+    for (const w of bundle.WrappingOption) {
       if (!w.shopifyProductId) {
         try {
           const title = `Wrap: ${w.name}`;
@@ -526,10 +526,10 @@ export const action = async ({ request }) => {
   }
 
   if (intent === "backfill-all-products") {
-    const bundles = await prisma.bundle.findMany({ include: { wrappingOptions: true, cards: true } });
+    const bundles = await prisma.bundle.findMany({ include: { WrappingOption: true, BundleCard: true } });
 
     for (const b of bundles) {
-      for (const w of b.wrappingOptions) {
+      for (const w of b.WrappingOption) {
         if (!w.shopifyProductId) {
           try {
             const title = `Wrap: ${w.name}`;
@@ -1387,9 +1387,9 @@ export default function AdditionalPage() {
                 
                 {/* Cards Status */}
                 <div>
-                  <Text variant="headingMd" as="h4">Gift Cards ({statusData.cards.length})</Text>
+                  <Text variant="headingMd" as="h4">Gift Cards ({statusData.BundleCard.length})</Text>
                   <div style={{ marginTop: '12px' }}>
-                    {statusData.cards.map((card) => (
+                    {statusData.BundleCard.map((card) => (
                       <div key={card.id} style={{ 
                         padding: '12px', 
                         margin: '8px 0', 
@@ -1629,11 +1629,11 @@ export default function AdditionalPage() {
               
               {/* Existing Wraps */}
               <div>
-                <Text variant="headingMd" as="h3">Existing Wraps ({bundle.wrappingOptions?.length || 0})</Text>
+                <Text variant="headingMd" as="h3">Existing Wraps ({bundle.WrappingOption?.length || 0})</Text>
                 <div style={{ marginTop: '16px' }}>
-                  {bundle.wrappingOptions && bundle.wrappingOptions.length > 0 ? (
+                  {bundle.WrappingOption && bundle.WrappingOption.length > 0 ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-                      {bundle.wrappingOptions.map((w) => (
+                      {bundle.WrappingOption.map((w) => (
                         <div key={w.id} style={{ 
                           border: '2px solid #e5e7eb', 
                           borderRadius: '12px', 
@@ -1795,11 +1795,11 @@ export default function AdditionalPage() {
               
               {/* Existing Cards */}
               <div>
-                <Text variant="headingMd" as="h3">Existing Cards ({bundle.cards?.length || 0})</Text>
+                <Text variant="headingMd" as="h3">Existing Cards ({bundle.BundleCard?.length || 0})</Text>
                 <div style={{ marginTop: '16px' }}>
-                  {bundle.cards && bundle.cards.length > 0 ? (
+                  {bundle.BundleCard && bundle.BundleCard.length > 0 ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-                      {bundle.cards.map((c) => (
+                      {bundle.BundleCard.map((c) => (
                         <div key={c.id} style={{ 
                           border: '2px solid #e5e7eb', 
                           borderRadius: '12px', 

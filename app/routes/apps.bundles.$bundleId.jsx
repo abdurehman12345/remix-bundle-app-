@@ -26,7 +26,7 @@ export const loader = async ({ request, params }) => {
         { bundleId: { contains: params.bundleId } }
       ] 
     },
-    include: { products: true, wrappingOptions: true, cards: true },
+    include: { BundleProduct: true, WrappingOption: true, BundleCard: true },
   });
   
   if (!bundle) {
@@ -115,7 +115,7 @@ export const action = async ({ request, params }) => {
           { bundleId: { contains: bundleId } }
         ] 
       },
-      include: { products: true, wrappingOptions: true, cards: true, tierPrices: true },
+      include: { BundleProduct: true, WrappingOption: true, BundleCard: true, BundleTierPrice: true },
     });
     if (!bundle) {
       console.error('❌ Bundle not found for ID:', bundleId);
@@ -135,7 +135,7 @@ export const action = async ({ request, params }) => {
 
     // Calculate product subtotal (discountable) and add-ons (non-discountable)
     let productSubtotal = 0; // only bundle items
-    const selectedProducts = bundle.products.filter(p => selectedProductIds.includes(p.id));
+    const selectedProducts = bundle.BundleProduct.filter(p => selectedProductIds.includes(p.id));
     for (const product of selectedProducts) {
       const variantId = selectedVariantMap[product.id];
       if (variantId && product.variantsJson) {
@@ -157,11 +157,11 @@ export const action = async ({ request, params }) => {
 
     let addonsSubtotal = 0; // wraps, cards, personalization
     if (selectedWrapId) {
-      const wrap = bundle.wrappingOptions.find(w => w.id === selectedWrapId);
+      const wrap = bundle.WrappingOption.find(w => w.id === selectedWrapId);
       if (wrap) { addonsSubtotal += wrap.priceCents || 0; }
     }
     if (selectedCardId) {
-      const card = bundle.cards.find(c => c.id === selectedCardId);
+      const card = bundle.BundleCard.find(c => c.id === selectedCardId);
       if (card) { addonsSubtotal += card.priceCents || 0; }
     }
     // personalization removed
@@ -169,7 +169,7 @@ export const action = async ({ request, params }) => {
     // Derive product total based on tier/bundle pricing
     let productTotal = productSubtotal;
     const itemsCount = selectedProducts.length;
-    if (bundle.tierPrices && bundle.tierPrices.length > 0) {
+    if (bundle.BundleTierPrice && bundle.BundleTierPrice.length > 0) {
       const applicable = bundle.tierPrices
         .filter(t => t.minQuantity <= itemsCount)
         .sort((a,b) => b.minQuantity - a.minQuantity)[0];

@@ -526,7 +526,7 @@ export const action = async ({ request, params }) => {
     // Support both internal id and public bundleId
     let bundle = await prisma.bundle.findFirst({
       where: { OR: [{ id: bundleId }, { bundleId }] },
-      include: { products: true, wrappingOptions: true, cards: true, tierPrices: true },
+      include: { BundleProduct: true, WrappingOption: true, BundleCard: true, BundleTierPrice: true },
     });
     if (!bundle) return json({ error: 'Bundle not found' }, { status: 404, headers: {
       'Access-Control-Allow-Origin': 'https://store-revive.myshopify.com',

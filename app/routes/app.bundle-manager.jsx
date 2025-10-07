@@ -22,9 +22,9 @@ export const loader = async ({ request }) => {
   const bundles = await prisma.bundle.findMany({
     where: { shop: session.shop },
     include: { 
-      products: true, 
-      wrappingOptions: true, 
-      cards: true,
+      BundleProduct: true, 
+      WrappingOption: true, 
+      BundleCard: true,
     },
     orderBy: { createdAt: 'desc' }
   });
@@ -63,14 +63,14 @@ export const action = async ({ request }) => {
     // Get all bundles with products that need variants
     const bundles = await prisma.bundle.findMany({
       where: { shop: session.shop },
-      include: { products: true }
+      include: { BundleProduct: true }
     });
     
     console.log(`📦 Found ${bundles.length} bundles to process`);
     let backfilledCount = 0;
     
     for (const bundle of bundles) {
-      for (const product of bundle.products) {
+      for (const product of bundle.BundleProduct) {
         if (!product.variantsJson) {
           try {
             const resp = await admin.graphql(`#graphql

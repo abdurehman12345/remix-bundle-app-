@@ -26,7 +26,7 @@ export const loader = async ({ request, params }) => {
   const { admin } = await authenticate.admin(request);
   const bundle = await prisma.bundle.findUnique({
     where: { id: params.bundleId },
-    include: { products: true, wrappingOptions: true, cards: true, tierPrices: true },
+    include: { BundleProduct: true, WrappingOption: true, BundleCard: true, BundleTierPrice: true },
   });
   if (!bundle) {
     throw redirect("/app/bundles");
@@ -34,7 +34,7 @@ export const loader = async ({ request, params }) => {
 
   // Fetch product details from Shopify for products that don't have variant titles
   const productsWithDetails = [];
-  for (const product of bundle.products) {
+  for (const product of bundle.BundleProduct) {
     if (!product.variantTitle || !product.variantGid) {
       try {
         const resp = await admin.graphql(`#graphql

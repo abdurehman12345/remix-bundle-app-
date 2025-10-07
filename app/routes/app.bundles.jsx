@@ -29,7 +29,7 @@ export const loader = async ({ request }) => {
 
   const bundles = await prisma.bundle.findMany({
     where: { shop },
-    include: { wrappingOptions: true, products: true },
+    include: { WrappingOption: true, BundleProduct: true },
     orderBy: { createdAt: "desc" },
   });
 
@@ -84,7 +84,7 @@ export const action = async ({ request }) => {
     const id = String(formData.get("id"));
     const source = await prisma.bundle.findUnique({
       where: { id },
-      include: { products: true, wrappingOptions: true, collections: true, tierPrices: true, globalWraps: true },
+      include: { BundleProduct: true, WrappingOption: true, BundleCollection: true, BundleTierPrice: true, BundleGlobalWrap: true },
     });
     if (source) {
       await prisma.bundle.create({
@@ -105,11 +105,11 @@ export const action = async ({ request }) => {
           wrapRequired: source.wrapRequired,
           status: source.status,
           type: source.type,
-          products: { create: source.products.map(p => ({ productGid: p.productGid, variantGid: p.variantGid, variantTitle: p.variantTitle, min: p.min, max: p.max, priceCents: p.priceCents, imageUrl: p.imageUrl })) },
-          wrappingOptions: { create: source.wrappingOptions.map(w => ({ name: w.name, priceCents: w.priceCents, imageUrl: w.imageUrl })) },
-          collections: { create: source.collections.map(c => ({ collectionGid: c.collectionGid })) },
-          tierPrices: { create: source.tierPrices.map(t => ({ minQuantity: t.minQuantity, pricingType: t.pricingType, valueCents: t.valueCents, valuePercent: t.valuePercent })) },
-          globalWraps: { create: source.globalWraps.map(g => ({ wrapId: g.wrapId })) },
+          BundleProduct: { create: source.BundleProduct.map(p => ({ productGid: p.productGid, variantGid: p.variantGid, variantTitle: p.variantTitle, min: p.min, max: p.max, priceCents: p.priceCents, imageUrl: p.imageUrl })) },
+          WrappingOption: { create: source.WrappingOption.map(w => ({ name: w.name, priceCents: w.priceCents, imageUrl: w.imageUrl })) },
+          BundleCollection: { create: source.BundleCollection.map(c => ({ collectionGid: c.collectionGid })) },
+          BundleTierPrice: { create: source.BundleTierPrice.map(t => ({ minQuantity: t.minQuantity, pricingType: t.pricingType, valueCents: t.valueCents, valuePercent: t.valuePercent })) },
+          BundleGlobalWrap: { create: source.BundleGlobalWrap.map(g => ({ wrapId: g.wrapId })) },
         },
       });
     }
@@ -241,10 +241,10 @@ export const action = async ({ request }) => {
   try {
     const bundle = await prisma.bundle.findUnique({
       where: { id: created.id },
-      include: { products: true },
+      include: { BundleProduct: true },
     });
-    if (bundle?.products?.length) {
-      for (const p of bundle.products) {
+    if (bundle?.BundleProduct?.length) {
+      for (const p of bundle.BundleProduct) {
         try {
           const resp = await admin.graphql(`#graphql
             query ProductDetails($id: ID!) {

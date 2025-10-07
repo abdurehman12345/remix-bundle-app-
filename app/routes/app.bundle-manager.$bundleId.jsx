@@ -52,7 +52,7 @@ export const loader = async ({ request, params }) => {
 
   // Fetch product details and full variants from Shopify for products missing details
   const productsWithDetails = [];
-  for (const product of bundle.products) {
+  for (const product of bundle.BundleProduct) {
     if (!product.variantTitle || !product.variantGid || !product.variantsJson) {
       try {
         const resp = await admin.graphql(`#graphql
@@ -123,11 +123,11 @@ export const action = async ({ request, params }) => {
     // Fetch bundle and iterate products to persist full variant lists
     const bundle = await prisma.bundle.findUnique({
       where: { id: params.bundleId },
-      include: { products: true },
+      include: { BundleProduct: true },
     });
     if (!bundle) return redirect("/app/bundle-manager");
 
-    for (const product of bundle.products) {
+    for (const product of bundle.BundleProduct) {
       try {
         const resp = await admin.graphql(`#graphql
           query ProductDetails($id: ID!) {
